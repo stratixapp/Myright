@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>Risk Analyzer — MyRight</title>
+  <link rel="manifest" href="../manifest.json"/>
+  <meta name="theme-color" content="#070c19"/>
+  <link rel="apple-touch-icon" href="../icons/icon-192.png"/>
+  <link rel="icon" href="../icons/favicon.ico"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/main.css"/>
+</head>
+<body>
+
+<div class="app-topbar">
+  <button class="hamburger-btn" onclick="openSidebar()">☰</button>
+  <a href="../index.html" class="logo" style="gap:8px;">
+    <div class="logo-icon" style="width:30px;height:30px;font-size:15px;">⚖️</div>
+    <span class="logo-text" style="font-size:18px;">MyRight</span>
+  </a>
+  <div style="width:38px;"></div>
+</div>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <a href="../index.html" class="logo"><div class="logo-icon">⚖️</div><span class="logo-text">MyRight</span></a>
+      <span class="sidebar-tagline">Know Your Rights. Own Your Documents.</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a class="sidebar-item" href="dashboard.html"><span class="sidebar-icon">🏠</span> Dashboard</a>
+      <a class="sidebar-item" href="generate.html"><span class="sidebar-icon">✨</span> Generate Document</a>
+      <a class="sidebar-item" href="vault.html"><span class="sidebar-icon">🗂️</span> My Documents</a>
+      <a class="sidebar-item" href="legal-advisor.html"><span class="sidebar-icon">👨‍⚖️</span> Legal Advisor</a>
+      <a class="sidebar-item active" href="risk-analyzer.html"><span class="sidebar-icon">🔍</span> Risk Analyzer</a>
+      <a class="sidebar-item" href="subscription.html"><span class="sidebar-icon">⭐</span> Subscription</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <a class="sidebar-item" href="profile.html"><span class="sidebar-icon">👤</span> Profile</a>
+      <button class="sidebar-item" onclick="handleLogout()"><span class="sidebar-icon">🚪</span> Sign Out</button>
+    </div>
+  </aside>
+
+  <main class="main-content" style="display:flex;align-items:center;justify-content:center;min-height:80vh;">
+    <div style="text-align:center;padding:40px 24px;max-width:420px;">
+
+      <div style="width:90px;height:90px;background:linear-gradient(135deg,#1a3a6e,#0d2244);border:2px solid rgba(226,180,75,0.35);border-radius:24px;display:flex;align-items:center;justify-content:center;font-size:42px;margin:0 auto 24px;box-shadow:0 8px 32px rgba(226,180,75,0.15);">
+        🔍
+      </div>
+
+      <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(226,180,75,0.12);border:1px solid rgba(226,180,75,0.3);color:#e2b44b;font-size:12px;font-weight:700;padding:5px 16px;border-radius:100px;margin-bottom:20px;letter-spacing:0.8px;">
+        🚀 COMING SOON
+      </div>
+
+      <h1 style="font-family:'Playfair Display',serif;font-size:26px;color:#f0e6cc;margin-bottom:12px;line-height:1.3;">
+        AI Risk Analyzer
+      </h1>
+
+      <p style="font-size:14px;color:var(--text2);line-height:1.7;margin-bottom:28px;">
+        Upload any contract or agreement and our AI will scan it for hidden risks, unfair clauses, missing protections, and legal loopholes — in seconds.
+      </p>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:28px;text-align:left;">
+        <div style="font-size:12px;font-weight:700;color:var(--text3);letter-spacing:0.5px;margin-bottom:14px;">WHAT'S COMING</div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div style="display:flex;align-items:center;gap:12px;font-size:13px;color:var(--text2);">
+            <span style="font-size:18px;">📋</span> Clause-by-clause risk scoring
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;font-size:13px;color:var(--text2);">
+            <span style="font-size:18px;">🔴</span> Detect HIGH / MEDIUM / LOW risk sections
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;font-size:13px;color:var(--text2);">
+            <span style="font-size:18px;">❌</span> Find missing clauses before you sign
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;font-size:13px;color:var(--text2);">
+            <span style="font-size:18px;">✅</span> Get specific recommendations to fix issues
+          </div>
+        </div>
+      </div>
+
+      <a href="generate.html" class="btn-primary gold" style="width:100%;justify-content:center;display:flex;text-decoration:none;">
+        ✨ Generate Documents Instead
+      </a>
+      <p style="font-size:12px;color:var(--text3);margin-top:14px;">
+        40+ legal documents available right now — free to try
+      </p>
+    </div>
+  </main>
+</div>
+
+<nav class="bottom-nav">
+  <a class="bottom-nav-item" href="dashboard.html"><span class="bn-icon">🏠</span>Home</a>
+  <a class="bottom-nav-item" href="generate.html"><span class="bn-icon">✨</span>Generate</a>
+  <a class="bottom-nav-item" href="vault.html"><span class="bn-icon">🗂️</span>Vault</a>
+  <a class="bottom-nav-item" href="legal-advisor.html"><span class="bn-icon">👨‍⚖️</span>Advisor</a>
+  <a class="bottom-nav-item" href="profile.html"><span class="bn-icon">👤</span>Profile</a>
+</nav>
+
+<script src="../js/local-auth.js"></script>
+<script>
+  MRAuth.requireAuth();
+  window.handleLogout = () => { MRAuth.signOut(); window.location.href = '../index.html'; };
+  window.openSidebar  = () => { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebarOverlay').classList.add('show'); };
+  window.closeSidebar = () => { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('show'); };
+</script>
+<script src="../js/sw-register.js"></script>
+</body>
+</html>
