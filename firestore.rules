@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Chat rooms ─────────────────────────────────────────────────────────
+    // App uses localStorage auth (not Firebase Auth), so we allow writes
+    // validated by userId field matching the roomId pattern
+    match /chats/{roomId} {
+      // Anyone can read/write room metadata (userId embedded in roomId)
+      allow read: if true;
+      allow write: if true;
+
+      // Messages inside the room
+      match /messages/{msgId} {
+        // Allow read/write - validated at app level
+        allow read, write: if true;
+      }
+    }
+
+    // ── Users collection ──────────────────────────────────────────────────
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

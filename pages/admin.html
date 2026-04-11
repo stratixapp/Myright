@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>Admin Dashboard — MyRight</title>
+  <link rel="manifest" href="../manifest.json"/>
+  <meta name="theme-color" content="#070c19"/>
+  <link rel="apple-touch-icon" href="../icons/icon-192.png"/>
+  <link rel="icon" href="../icons/favicon.ico"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/main.css"/>
+</head>
+<body>
+
+<div class="app-topbar">
+  <button class="hamburger-btn" onclick="openSidebar()">☰</button>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div class="logo-icon" style="width:30px;height:30px;font-size:15px;">⚖️</div>
+    <span style="font-family:'Playfair Display',serif;font-weight:700;font-size:16px;">MyRight Admin</span>
+    <span class="badge badge-warning" style="font-size:10px;">ADMIN</span>
+  </div>
+  <button onclick="handleLogout()" class="btn-ghost btn-sm">Sign Out</button>
+</div>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <span style="font-size:14px;font-weight:700;color:var(--gold);">⚙️ Admin Panel</span>
+      <span class="sidebar-tagline">MyRight v3 Management</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a class="sidebar-item active" href="admin.html"><span class="sidebar-icon">📊</span> Overview</a>
+      <a class="sidebar-item" href="#users" onclick="showTab('users')"><span class="sidebar-icon">👥</span> Users</a>
+      <a class="sidebar-item" href="#documents" onclick="showTab('documents')"><span class="sidebar-icon">📄</span> Documents</a>
+      <a class="sidebar-item" href="#revenue" onclick="showTab('revenue')"><span class="sidebar-icon">💰</span> Revenue</a>
+      <a class="sidebar-item" href="#templates" onclick="showTab('templates')"><span class="sidebar-icon">📝</span> Templates</a>
+      <a class="sidebar-item" href="#analytics" onclick="showTab('analytics')"><span class="sidebar-icon">📈</span> Analytics</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <a class="sidebar-item" href="dashboard.html"><span class="sidebar-icon">🏠</span> User Dashboard</a>
+      <button class="sidebar-item" onclick="handleLogout()"><span class="sidebar-icon">🚪</span> Sign Out</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <!-- OVERVIEW TAB -->
+    <div id="tab_overview">
+      <div class="page-header">
+        <h1 class="page-title">📊 Admin Overview</h1>
+        <p class="page-sub">MyRight platform analytics & management</p>
+      </div>
+
+      <div class="admin-stat-grid">
+        <div class="admin-stat">
+          <div class="admin-stat-val" id="stat_users">—</div>
+          <div class="admin-stat-lab">Total Users</div>
+        </div>
+        <div class="admin-stat">
+          <div class="admin-stat-val" id="stat_docs">—</div>
+          <div class="admin-stat-lab">Documents Generated</div>
+        </div>
+        <div class="admin-stat">
+          <div class="admin-stat-val" id="stat_revenue">—</div>
+          <div class="admin-stat-lab">Est. Revenue</div>
+        </div>
+        <div class="admin-stat">
+          <div class="admin-stat-val" id="stat_today">—</div>
+          <div class="admin-stat-lab">Today's Docs</div>
+        </div>
+        <div class="admin-stat">
+          <div class="admin-stat-val" id="stat_pro">—</div>
+          <div class="admin-stat-lab">Pro Subscribers</div>
+        </div>
+        <div class="admin-stat">
+          <div class="admin-stat-val" id="stat_monthly_rev">—</div>
+          <div class="admin-stat-lab">Monthly Revenue</div>
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="gen-section" style="margin-bottom:16px;">
+        <h3>📋 Recent Documents</h3>
+        <div id="recentAdmin">
+          <div class="loading-wrap"><div class="spinner"></div><p>Loading...</p></div>
+        </div>
+      </div>
+
+      <!-- Doc Type Distribution -->
+      <div class="gen-section">
+        <h3>📊 Most Generated Documents</h3>
+        <div id="docDistribution">
+          <div class="loading-wrap"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- USERS TAB -->
+    <div id="tab_users" style="display:none;">
+      <div class="page-header">
+        <h1 class="page-title">👥 User Management</h1>
+      </div>
+      <div class="gen-section">
+        <div class="search-bar">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search users by name or email..." id="userSearch" oninput="searchUsers(this.value)"/>
+        </div>
+        <div id="usersTable">
+          <div class="loading-wrap"><div class="spinner"></div><p>Loading users...</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DOCUMENTS TAB -->
+    <div id="tab_documents" style="display:none;">
+      <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <h1 class="page-title">📄 All Documents</h1>
+          <p class="page-sub">View, manage and export all generated documents</p>
+        </div>
+        <button onclick="exportCSV()" class="btn-primary btn-sm">📥 Export CSV</button>
+      </div>
+      <div class="gen-section">
+        <div id="allDocsTable">
+          <div class="loading-wrap"><div class="spinner"></div><p>Loading documents...</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REVENUE TAB -->
+    <div id="tab_revenue" style="display:none;">
+      <div class="page-header">
+        <h1 class="page-title">💰 Revenue Analytics</h1>
+      </div>
+      <div class="dash-grid" style="margin-bottom:16px;">
+        <div class="dash-card">
+          <div class="dash-card-label">Total Revenue</div>
+          <div class="dash-card-value" id="rev_total">—</div>
+          <div class="dash-card-icon">💰</div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-card-label">This Month</div>
+          <div class="dash-card-value" id="rev_month">—</div>
+          <div class="dash-card-icon">📅</div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-card-label">Avg Per Doc</div>
+          <div class="dash-card-value" id="rev_avg">—</div>
+          <div class="dash-card-icon">📊</div>
+        </div>
+      </div>
+      <div class="gen-section">
+        <h3>💳 Recent Payments</h3>
+        <div id="paymentsTable">
+          <div class="empty-state"><div class="es-icon">💳</div><h4>Payment data</h4><p>Payments will appear here once Razorpay is connected</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TEMPLATES TAB -->
+    <div id="tab_templates" style="display:none;">
+      <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <h1 class="page-title">📝 Document Templates</h1>
+          <p class="page-sub">Manage pricing and templates for all document types</p>
+        </div>
+        <button onclick="showAddTemplate()" class="btn-primary btn-sm">+ Add Document</button>
+      </div>
+      <div class="gen-section">
+        <div id="templatesTable"></div>
+      </div>
+    </div>
+
+    <!-- ANALYTICS TAB -->
+    <div id="tab_analytics" style="display:none;">
+      <div class="page-header">
+        <h1 class="page-title">📈 Platform Analytics</h1>
+      </div>
+      <div class="gen-section" style="margin-bottom:16px;">
+        <h3>📊 Document Generation Trends</h3>
+        <div style="text-align:center;padding:40px;color:var(--text3);font-size:14px;">
+          Chart integration (Chart.js) — Connect analytics SDK for real-time data
+        </div>
+      </div>
+      <div class="gen-section">
+        <h3>🌍 User Geography</h3>
+        <div id="geoStats">
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--bg2);border-radius:8px;">
+              <span>🇮🇳 Kerala</span><span class="badge badge-info">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--bg2);border-radius:8px;">
+              <span>🇮🇳 Maharashtra</span><span class="badge badge-info">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--bg2);border-radius:8px;">
+              <span>🇮🇳 Tamil Nadu</span><span class="badge badge-info">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"><span id="toastMsg"></span></div>
+
+<script src="../js/local-auth.js"></script>
+<script>
+// ── ADMIN PANEL — Shows localStorage stats ───────────────────────────────────
+const ADMIN_EMAIL_ALLOWED = 'anandhushaji1212@gmail.com';
+
+const DOC_PRICES = {
+  rent_agreement:99, nda:149, partnership_deed:299, employment_contract:199,
+  offer_letter:99, freelance_contract:149, legal_notice:199, affidavit:49,
+  poa_general:299, poa_property:299, gift_deed:199, loan_agreement:149,
+  name_change:49, address_proof:49, income_affidavit:49, character_cert:49,
+  self_declaration:49, noc:49, auth_letter:49, gap_certificate:49,
+  bonafide_declaration:49, student_affidavit:49, default: 99
+};
+
+let allDocs = [], allUsers = [];
+let activeTab = 'overview';
+
+// Load from localStorage
+const _sess = MRAuth.requireAuth();
+if (_sess && _sess.email !== ADMIN_EMAIL_ALLOWED) {
+  window.location.replace('dashboard.html');
+}
+const _users = JSON.parse(localStorage.getItem('mr_users') || '{}');
+const _docs = JSON.parse(localStorage.getItem('mr_documents') || '[]');
+
+allUsers = Object.values(_users);
+allDocs = _docs;
+
+// Render overview stats
+function renderOverview() {
+  const totalRevenue = allDocs.reduce((s, d) => s + (DOC_PRICES[d.docType] || 99), 0);
+  const el = id => document.getElementById(id);
+  if (el('totalUsers')) el('totalUsers').textContent = allUsers.length;
+  if (el('totalDocs')) el('totalDocs').textContent = allDocs.length;
+  if (el('totalRevenue')) el('totalRevenue').textContent = '₹' + totalRevenue.toLocaleString('en-IN');
+  if (el('activeUsers')) el('activeUsers').textContent = allUsers.length;
+}
+
+function renderUsers() {
+  const container = document.getElementById('usersTable');
+  if (!container) return;
+  if (allUsers.length === 0) { container.innerHTML = '<p style="color:var(--text3);padding:20px;">No users yet.</p>'; return; }
+  container.innerHTML = `<table style="width:100%;border-collapse:collapse;">
+    <thead><tr style="border-bottom:1px solid var(--border);">
+      <th style="text-align:left;padding:10px;font-size:12px;color:var(--text3);">Name</th>
+      <th style="text-align:left;padding:10px;font-size:12px;color:var(--text3);">Email</th>
+      <th style="text-align:left;padding:10px;font-size:12px;color:var(--text3);">Docs</th>
+      <th style="text-align:left;padding:10px;font-size:12px;color:var(--text3);">Joined</th>
+    </tr></thead>
+    <tbody>${allUsers.map(u => `<tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:10px;font-size:13px;">${u.name || '—'}</td>
+      <td style="padding:10px;font-size:13px;color:var(--text2);">${u.email}</td>
+      <td style="padding:10px;font-size:13px;">${u.docsGenerated || 0}</td>
+      <td style="padding:10px;font-size:12px;color:var(--text3);">${u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-IN') : '—'}</td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function renderDocs() {
+  const container = document.getElementById('docsTable');
+  if (!container) return;
+  if (allDocs.length === 0) { container.innerHTML = '<p style="color:var(--text3);padding:20px;">No documents yet.</p>'; return; }
+  container.innerHTML = `<table style="width:100%;border-collapse:collapse;">
+    <thead><tr style="border-bottom:1px solid var(--border);">
+      <th style="text-align:left;padding:10px;font-size:12px;color:var(--text3);">Document</th>
+      <th style="text-align:left;padding:10px;font-size:12px;color:var(--text3);">Date</th>
+    </tr></thead>
+    <tbody>${allDocs.slice().reverse().map(d => `<tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:10px;font-size:13px;">${d.docName || d.docType}</td>
+      <td style="padding:10px;font-size:12px;color:var(--text3);">${d.createdAt ? new Date(d.createdAt).toLocaleDateString('en-IN') : '—'}</td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+window.switchTab = (tab) => {
+  activeTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.tab-content').forEach(c => c.style.display = c.id === `tab-${tab}` ? 'block' : 'none');
+  if (tab === 'users') renderUsers();
+  if (tab === 'docs') renderDocs();
+};
+
+// Init
+renderOverview();
+
+window.showAddTemplate = () => showToast('🚧 Template editor coming in v3.1');
+
+// ── Extra local admin helpers ──────────────────────────────────────────────────
+window.showTab = function(tab) {
+  document.querySelectorAll('[id^="tab_"]').forEach(el => el.style.display = 'none');
+  const tabEl = document.getElementById('tab_' + tab);
+  if (tabEl) tabEl.style.display = 'block';
+  document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+  activeTab = tab;
+  if (tab === 'users') renderUsers();
+  if (tab === 'docs') renderDocs();
+};
+
+window.editPrice = function(id, currentPrice) {
+  const newPrice = prompt(`Edit price for ${id.replace(/_/g,' ')}:\nCurrent: ₹${currentPrice}`, currentPrice);
+  if (newPrice && !isNaN(newPrice)) showToast(`✅ Price updated to ₹${newPrice}`);
+};
+
+window.exportCSV = function() {
+  const rows = [['Document Name', 'Date', 'User Email', 'Revenue']];
+  allDocs.forEach(d => {
+    const name = d.docName || d.docType || '—';
+    const date = new Date(d.createdAt).toLocaleDateString('en-IN');
+    const userEmail = allUsers.find(u => u.uid === d.userId)?.email || d.userId?.substring(0,12) || '—';
+    rows.push([name, date, userEmail, DOC_PRICES[d.docType] || 99]);
+  });
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const a = Object.assign(document.createElement('a'), {
+    href: 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv),
+    download: 'myright-documents.csv'
+  });
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  showToast('✅ CSV exported!');
+};
+
+window.searchUsers = function(val) {}; // placeholder
+
+window.handleLogout = () => { MRAuth.signOut(); window.location.href = '../index.html'; };
+window.openSidebar = () => { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebarOverlay').classList.add('show'); };
+window.closeSidebar = () => { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('show'); };
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Init — show overview by default
+document.querySelectorAll('[id^="tab_"]').forEach((el,i) => { if(i > 0) el.style.display = 'none'; });
+</script>
+<script src="../js/sw-register.js"></script>
+</body>
+</html>
