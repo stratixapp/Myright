@@ -162,60 +162,84 @@
 <script src="../js/firebase-auth.js"></script>
 <script src="../js/sw-register.js"></script>
 <script>
-// ── Firebase ───────────────────────────────────────────────────────────────────
-const FB_CFG = {
-  apiKey:"AIzaSyAO6trpZKCvCm4xwuuiCMlLVhmJOdZ_Krc",
-  authDomain:"my-right-c8924.firebaseapp.com",
-  projectId:"my-right-c8924",
-  storageBucket:"my-right-c8924.firebasestorage.app",
-  messagingSenderId:"879694032704",
-  appId:"1:879694032704:web:c36729fe7fa249076b94a5"
-};
-let db = null;
-try {
-  if (!firebase.apps.length) firebase.initializeApp(FB_CFG);
-  db = firebase.firestore();
-  db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
-} catch(e){ console.warn('Firebase:',e); }
+// ── Globals (must be accessible by inline onclick handlers) ───────────────────
+let db, _sess, UID, UNAME, ROOM_ID;
+const FREE_MAX = 3;
+let msgLoaded = false, unsubscribe = null, userSent = 0, unlocked = false;
+let chatArea, welcome, input, sendBtn, charCountEl, noticeBar, paywallBar, counterPill, counterText;
 
-// ── Session (auto-guest if not logged in) ──────────────────────────────────────
-let _sess = MRAuth.currentUser();
-if (!_sess) {
-  const gid = 'guest_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
-  _sess = {uid:gid, name:'Guest User', email:gid+'@guest.local', plan:'free'};
-  localStorage.setItem('mr_session', JSON.stringify(_sess));
-}
+function _initGlobals() {
+  // Firebase — reuse MRAuth's already-initialised db
+  if (typeof MRAuth === 'undefined') {
+    // firebase-auth.js not loaded — fallback init
+    try {
+      const FB_CFG = {
+        apiKey:"AIzaSyAO6trpZKCvCm4xwuuiCMlLVhmJOdZ_Krc",
+        authDomain:"my-right-c8924.firebaseapp.com",
+        projectId:"my-right-c8924",
+        storageBucket:"my-right-c8924.firebasestorage.app",
+        messagingSenderId:"879694032704",
+        appId:"1:879694032704:web:c36729fe7fa249076b94a5"
+      };
+      if (!firebase.apps.length) firebase.initializeApp(FB_CFG);
+      db = firebase.firestore();
+      db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
+    } catch(e) { console.warn('Firebase fallback failed:', e); db = null; }
+    try { _sess = JSON.parse(localStorage.getItem('mr_session')); } catch(e) {}
+  } else {
+    db = MRAuth.getDb();
+    _sess = MRAuth.currentUser();
+  }
+  if (!_sess) {
+    const gid = 'guest_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    _sess = {uid:gid, name:'Guest User', email:gid+'@guest.local', plan:'free'};
+    localStorage.setItem('mr_session', JSON.stringify(_sess));
+  }
 
-const UID       = _sess.uid;
-const UNAME     = _sess.name || 'User';
-const ROOM_ID   = 'room_' + UID;
-const FREE_MAX  = 3;
+  UID       = _sess.uid;
+  UNAME     = _sess.name || 'User';
+  ROOM_ID   = 'room_' + UID;
 
-// ── State ─────────────────────────────────────────────────────────────────────
-let msgLoaded   = false;
-let unsubscribe = null;
-let userSent    = 0;   // how many messages user has sent
-let unlocked    = false; // paid for this conversation
+  // DOM
+  chatArea    = document.getElementById('chatArea');
+  welcome     = document.getElementById('welcomeState');
+  input       = document.getElementById('msgInput');
+  sendBtn     = document.getElementById('sendBtn');
+  charCountEl = document.getElementById('charCount');
+  noticeBar   = document.getElementById('noticeBar');
+  paywallBar  = document.getElementById('paywallBar');
+  counterPill = document.getElementById('counterPill');
+  counterText = document.getElementById('counterText');
 
-// ── DOM ───────────────────────────────────────────────────────────────────────
-const chatArea    = document.getElementById('chatArea');
-const welcome     = document.getElementById('welcomeState');
-const input       = document.getElementById('msgInput');
-const sendBtn     = document.getElementById('sendBtn');
-const charCountEl = document.getElementById('charCount');
-const noticeBar   = document.getElementById('noticeBar');
-const paywallBar  = document.getElementById('paywallBar');
-const counterPill = document.getElementById('counterPill');
-const counterText = document.getElementById('counterText');
+  // Online/offline
+  window.addEventListener('online',  ()=>document.getElementById('offlineBanner').classList.remove('show'));
+  window.addEventListener('offline', ()=>document.getElementById('offlineBanner').classList.add('show'));
 
-// ── Online/offline ─────────────────────────────────────────────────────────────
-window.addEventListener('online',  ()=>document.getElementById('offlineBanner').classList.remove('show'));
-window.addEventListener('offline', ()=>document.getElementById('offlineBanner').classList.add('show'));
+  // Input listeners
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!sendBtn.disabled) sendMessage(); }
+  });
+  input.addEventListener('focus', () => { setTimeout(() => scrollBottom(false), 300); });
+  window.visualViewport && window.visualViewport.addEventListener('resize', () => { scrollBottom(false); });
 
-// ── Input handling ─────────────────────────────────────────────────────────────
+  // Init Firebase or show error
+  if (!db) {
+    noticeBar.innerHTML = '<span>⚠️</span><span>Chat unavailable — check internet connection</span>';
+    noticeBar.style.borderColor = 'rgba(240,79,79,0.3)';
+    noticeBar.style.color = '#f87171';
+    input.disabled = true;
+    input.placeholder = 'Chat unavailable';
+    sendBtn.disabled = true;
+  } else {
+    loadMessages();
+  }
+} // end _initGlobals
+
+// ── Input handling (global — called by oninput attribute) ─────────────────────
 function onInput(el) {
   el.style.height = 'auto';
   el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+  if (!sendBtn || !charCountEl) return; // not ready yet
   const len = el.value.trim().length;
   const blocked = !unlocked && userSent >= FREE_MAX;
   sendBtn.disabled = len === 0 || blocked;
@@ -223,14 +247,7 @@ function onInput(el) {
   charCountEl.className = 'char-count' + (el.value.length > 900 ? ' warn' : '');
 }
 
-input.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!sendBtn.disabled) sendMessage(); }
-});
 
-
-// Scroll to bottom when keyboard opens on mobile
-input.addEventListener('focus', () => { setTimeout(() => scrollBottom(false), 300); });
-window.visualViewport && window.visualViewport.addEventListener('resize', () => { scrollBottom(false); });
 function fillHint(el) {
   input.value = el.textContent.replace(/^[^\s]+\s/, '');
   onInput(input);
@@ -527,17 +544,8 @@ function markAdminMessagesRead(snap) {
   }
 }
 
-// ── Init ───────────────────────────────────────────────────────────────────────
-if (!db) {
-  noticeBar.innerHTML = '<span>⚠️</span><span>Chat unavailable — check your internet connection</span>';
-  noticeBar.style.borderColor = 'rgba(240,79,79,0.3)';
-  noticeBar.style.color = '#f87171';
-  input.disabled = true;
-  input.placeholder = 'Chat unavailable';
-  sendBtn.disabled = true;
-} else {
-  loadMessages();
-}
+// ── Boot ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', _initGlobals);
 </script>
 </body>
 </html>
