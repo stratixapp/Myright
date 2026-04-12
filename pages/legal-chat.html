@@ -26,12 +26,15 @@
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
     /* Full-viewport flex column — chat-area is the only scroller */
-    html,body{height:100%;}
+    html{height:100%; height:-webkit-fill-available;}
     body{
       font-family:'Sora',sans-serif;
       background:var(--chat-bg); color:var(--text1);
       display:flex; flex-direction:column;
-      height:100%; overflow:hidden;
+      min-height:100vh; min-height:-webkit-fill-available;
+      max-height:100vh; max-height:-webkit-fill-available;
+      overflow:hidden;
+      position:fixed; inset:0;
     }
 
     /* ── Top bar ── */
@@ -268,19 +271,13 @@
   window.addEventListener('online',  function () { document.getElementById('offlineBanner').classList.remove('show'); });
   window.addEventListener('offline', function () { document.getElementById('offlineBanner').classList.add('show'); });
 
-  // ── Mobile keyboard: visualViewport keeps input visible ──────────────────────
+  // ── Mobile keyboard: scroll chat to bottom when keyboard opens ───────────────
   if (window.visualViewport) {
-    function onVP() {
-      requestAnimationFrame(function () {
-        document.body.style.height = window.visualViewport.height + 'px';
-        scrollBottom(false);
-      });
-    }
-    window.visualViewport.addEventListener('resize', onVP);
-    window.visualViewport.addEventListener('scroll', onVP);
+    window.visualViewport.addEventListener('resize', function () {
+      requestAnimationFrame(function () { scrollBottom(false); });
+    });
   }
-
-  input.addEventListener('focus', function () { setTimeout(function () { scrollBottom(true); }, 350); });
+  input.addEventListener('focus', function () { setTimeout(function () { scrollBottom(true); }, 300); });
 
   // ── Input handler ────────────────────────────────────────────────────────────
   function onInput() {
@@ -362,11 +359,11 @@
     input.style.height = 'auto';
     charCountEl.textContent = '';
 
+    var TS = firebase.firestore.FieldValue.serverTimestamp();
     db.collection('chats').doc(ROOM_ID).collection('messages').add({
       text: text, sender: 'user', senderName: UNAME,
       userId: UID, userEmail: _sess.email,
-      ts: firebase.firestore.FieldValue.serverTimestamp(),
-      read: false, status: 'sent'
+      ts: TS, read: false, status: 'sent'
     }).then(function () {
       return db.collection('chats').doc(ROOM_ID).set({
         userId: UID, userName: UNAME, userEmail: _sess.email,
@@ -377,11 +374,11 @@
         chatUnlocked: unlocked
       }, { merge: true });
     }).then(function () {
-      sendBtn.disabled = false;
-    }).catch(function () {
+      sendBtn.disabled = (input.value.trim().length === 0);
+    }).catch(function (err) {
+      console.warn('Send error:', err);
       input.value = orig;
       onInput();
-      sendBtn.disabled = false;
       showToast('Failed to send. Try again.', 'error');
     });
   }
