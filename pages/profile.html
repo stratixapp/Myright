@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <link rel="manifest" href="../manifest.json"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="theme-color" content="#070c19"/>
+  <title>Profile — MyRight</title>
+  <link rel="apple-touch-icon" href="../icons/icon-192.png"/>
+  <link rel="icon" href="../icons/favicon.ico"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/main.css"/>
+  <style>
+    .profile-hero{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:32px;display:flex;align-items:center;gap:24px;margin-bottom:20px;flex-wrap:wrap}
+    .avatar{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#1a3060,#0a1835);border:2px solid rgba(201,151,58,0.3);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:700;color:var(--gold);flex-shrink:0}
+    .profile-info{flex:1}
+    .profile-name{font-size:22px;font-weight:700;margin-bottom:4px}
+    .profile-email{font-size:14px;color:var(--text3);margin-bottom:8px}
+    .plan-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(28,185,122,0.1);border:1px solid rgba(28,185,122,0.2);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600;color:#1cb97a}
+    .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+    .stat-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center}
+    .stat-val{font-size:26px;font-weight:700;color:var(--text1);margin-bottom:4px}
+    .stat-lbl{font-size:12px;color:var(--text3)}
+    .section-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:16px}
+    .section-title{font-size:15px;font-weight:700;margin-bottom:16px}
+    .field-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
+    .field-row:last-child{border-bottom:none}
+    .field-label{font-size:13px;color:var(--text3);margin-bottom:2px}
+    .field-value{font-size:14px;font-weight:500;color:var(--text1)}
+    .edit-btn{font-size:12px;color:var(--blue);cursor:pointer;padding:4px 10px;border:1px solid rgba(59,111,255,0.3);border-radius:6px;background:none;font-family:Outfit,sans-serif;transition:all .2s}
+    .edit-btn:hover{background:rgba(59,111,255,0.1)}
+    .edit-input{width:100%;background:var(--surface2);border:1.5px solid rgba(59,111,255,0.4);border-radius:8px;padding:9px 12px;font-size:16px;color:var(--text1);font-family:Outfit,sans-serif;outline:none;margin-top:6px}
+    .btn-danger{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:#f87171;font-size:14px;font-weight:600;cursor:pointer;width:100%;transition:all .2s;font-family:Outfit,sans-serif}
+    .btn-danger:hover{background:rgba(239,68,68,0.15)}
+    .dev-note{background:rgba(28,185,122,0.06);border:1px solid rgba(28,185,122,0.15);border-radius:10px;padding:10px 14px;font-size:12px;color:var(--text2);margin-bottom:16px}
+    @media(max-width:480px){.stat-row{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+
+<div class="app-topbar">
+  <button class="hamburger-btn" onclick="openSidebar()">☰</button>
+  <a href="../index.html" class="logo" style="gap:8px;">
+    <div class="logo-icon" style="width:30px;height:30px;font-size:15px;">⚖️</div>
+    <span class="logo-text" style="font-size:18px;">MyRight</span>
+  </a>
+  <div style="width:38px;"></div>
+</div>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <a href="../index.html" class="logo"><div class="logo-icon">⚖️</div><span class="logo-text">MyRight</span></a>
+      <span class="sidebar-tagline">Know Your Rights. Own Your Documents.</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a class="sidebar-item" href="dashboard.html"><span class="sidebar-icon">🏠</span> Dashboard</a>
+      <a class="sidebar-item" href="generate.html"><span class="sidebar-icon">✨</span> Generate Document</a>
+      <a class="sidebar-item" href="vault.html"><span class="sidebar-icon">🗂️</span> My Documents</a>
+      <a class="sidebar-item" href="legal-advisor.html"><span class="sidebar-icon">👨‍⚖️</span> Legal Advisor</a>
+      <a class="sidebar-item" href="risk-analyzer.html"><span class="sidebar-icon">🔍</span> Risk Analyzer</a>
+      <a class="sidebar-item" href="legal-chat.html"><span class="sidebar-icon">💬</span> Legal Support</a>
+      <a class="sidebar-item" href="subscription.html"><span class="sidebar-icon">⭐</span> Subscription</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <a class="sidebar-item active" href="profile.html"><span class="sidebar-icon">👤</span> Profile</a>
+      <button class="sidebar-item" onclick="doLogout()"><span class="sidebar-icon">🚪</span> Sign Out</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+
+    <div class="page-header">
+      <h1 class="page-title">👤 My Profile</h1>
+      <p class="page-sub">Manage your account details</p>
+    </div>
+
+    
+
+    <!-- Profile Hero -->
+    <div class="profile-hero">
+      <div class="avatar" id="avatarEl">?</div>
+      <div class="profile-info">
+        <div class="profile-name" id="profileName">Loading...</div>
+        <div class="profile-email" id="profileEmail">—</div>
+        <div class="plan-chip" id="planChip">⭐ Pro Access</div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stat-row">
+      <div class="stat-box">
+        <div class="stat-val" id="statDocs">0</div>
+        <div class="stat-lbl">Documents</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="statSaved">₹0</div>
+        <div class="stat-lbl">Money Saved</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="statJoined">—</div>
+        <div class="stat-lbl">Member Since</div>
+      </div>
+    </div>
+
+    <!-- Account Details -->
+    <div class="section-card">
+      <div class="section-title">Account Details</div>
+
+      <div class="field-row">
+        <div>
+          <div class="field-label">Full Name</div>
+          <div class="field-value" id="displayName">—</div>
+          <input class="edit-input" id="editName" style="display:none;" placeholder="Your full name"/>
+        </div>
+        <button class="edit-btn" id="editNameBtn" onclick="toggleEdit('Name')">Edit</button>
+      </div>
+
+      <div class="field-row">
+        <div style="flex:1;">
+          <div class="field-label">Email Address</div>
+          <div class="field-value" id="displayEmail">—</div>
+        </div>
+        <span style="font-size:11px;color:var(--text3);">Read-only</span>
+      </div>
+
+      <div class="field-row">
+        <div>
+          <div class="field-label">Password</div>
+          <div class="field-value">••••••••</div>
+          <input class="edit-input" id="editPass" type="password" style="display:none;" placeholder="New password (min 6 chars)"/>
+        </div>
+        <button class="edit-btn" id="editPassBtn" onclick="toggleEdit('Pass')">Change</button>
+      </div>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="section-card">
+      <div class="section-title">Account Actions</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <button class="btn-primary" onclick="doLogout()" style="background:linear-gradient(135deg,#2a4fd6,#1a3ab8);">
+          🚪 Sign Out
+        </button>
+        <button class="btn-danger" onclick="clearAllData()">
+          🗑️ Clear All Local Data (reset test)
+        </button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<nav class="bottom-nav">
+  <a class="bottom-nav-item" href="dashboard.html"><span class="bn-icon">🏠</span>Home</a>
+  <a class="bottom-nav-item" href="generate.html"><span class="bn-icon">✨</span>Generate</a>
+  <a class="bottom-nav-item" href="vault.html"><span class="bn-icon">🗂️</span>Vault</a>
+  <a class="bottom-nav-item" href="legal-advisor.html"><span class="bn-icon">👨‍⚖️</span>Advisor</a>
+  <a class="bottom-nav-item active" href="profile.html"><span class="bn-icon">👤</span>Profile</a>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="../js/firebase-auth.js"></script>
+<script>
+  const user = MRAuth.requireAuth();
+  if (!user) throw new Error('redirect');
+
+  // Populate basic UI immediately from session
+  const initials = (user.name || 'U').split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+  document.getElementById('avatarEl').textContent = initials;
+  document.getElementById('profileName').textContent = user.name || 'User';
+  document.getElementById('profileEmail').textContent = user.email || '';
+  document.getElementById('displayName').textContent = user.name || '—';
+  document.getElementById('displayEmail').textContent = user.email || '—';
+
+  // Load Firebase data async
+  async function loadProfile() {
+    const [userData, docs] = await Promise.all([
+      MRAuth.getUserData(),
+      MRDocs.getAll(user.uid)
+    ]);
+    const docCount = docs.length;
+    document.getElementById('statDocs').textContent = docCount;
+    document.getElementById('statSaved').textContent = '₹' + (docCount * 2500).toLocaleString('en-IN');
+
+    const joined = userData?.createdAt
+      ? new Date(userData.createdAt.toDate ? userData.createdAt.toDate() : userData.createdAt).toLocaleDateString('en-IN',{month:'short',year:'numeric'})
+      : '—';
+    document.getElementById('statJoined').textContent = joined;
+
+    const userPlan = userData?.plan || user?.plan || 'free';
+    const planChip = document.getElementById('planChip');
+    if (planChip) {
+      if (userPlan === 'pro') {
+        planChip.textContent = '⭐ Pro Monthly';
+        planChip.style.background = 'rgba(201,151,58,0.12)';
+        planChip.style.borderColor = 'rgba(201,151,58,0.3)';
+        planChip.style.color = '#e2b44b';
+      } else if (userPlan === 'yearly') {
+        planChip.textContent = '🏆 Pro Yearly';
+        planChip.style.background = 'rgba(28,185,122,0.1)';
+        planChip.style.borderColor = 'rgba(28,185,122,0.2)';
+        planChip.style.color = '#1cb97a';
+      } else {
+        planChip.textContent = '🆓 Free Plan';
+        planChip.style.background = 'rgba(150,150,150,0.1)';
+        planChip.style.borderColor = 'rgba(150,150,150,0.2)';
+        planChip.style.color = 'var(--text3)';
+      }
+    }
+  }
+  loadProfile().catch(console.warn);
+
+  // Edit toggling
+  function toggleEdit(field) {
+    const btn = document.getElementById(`edit${field}Btn`);
+    const input = document.getElementById(`edit${field}`);
+    const isEditing = input.style.display !== 'none';
+
+    if (isEditing) {
+      const val = input.value.trim();
+      if (field === 'Name') {
+        if (!val) { toast('Name cannot be empty', 'error'); return; }
+        // Update Firebase user display name + Firestore doc
+        try {
+          const db = MRAuth.getDb();
+          if (db && _sess) {
+            db.collection('users').doc(_sess.uid).update({ name: val }).catch(()=>{});
+          }
+          if (firebase.auth().currentUser) {
+            firebase.auth().currentUser.updateProfile({ displayName: val }).catch(()=>{});
+          }
+        } catch(e) {}
+        // Update local session cache
+        const sess = JSON.parse(localStorage.getItem('mr_session') || '{}');
+        sess.name = val;
+        localStorage.setItem('mr_session', JSON.stringify(sess));
+        document.getElementById('displayName').textContent = val;
+        document.getElementById('profileName').textContent = val;
+        toast('✅ Name updated!');
+      } else if (field === 'Pass') {
+        if (val.length < 6) { toast('Password must be at least 6 characters', 'error'); return; }
+        try {
+          const fbUser = firebase.auth().currentUser;
+          if (fbUser) {
+            fbUser.updatePassword(val).then(() => {
+              toast('✅ Password updated!');
+            }).catch(err => {
+              if (err.code === 'auth/requires-recent-login') {
+                toast('⚠️ Please sign out and sign in again to change password', 'error');
+              } else {
+                toast('❌ ' + err.message, 'error');
+              }
+            });
+          }
+        } catch(e) { toast('❌ Could not update password', 'error'); }
+      }
+      input.style.display = 'none';
+      btn.textContent = field === 'Name' ? 'Edit' : 'Change';
+    } else {
+      input.style.display = 'block';
+      input.focus();
+      btn.textContent = 'Save';
+    }
+  }
+
+  function clearAllData() {
+    if (!confirm('This will sign you out and clear local data. Your documents saved to the cloud will remain safe. Continue?')) return;
+    MRAuth.signOut();
+    localStorage.clear();
+    window.location.href = '../index.html';
+  }
+
+  function toast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.className = `toast show ${type}`;
+    setTimeout(() => t.className = 'toast', 3000);
+  }
+
+  function doLogout() { MRAuth.signOut(); window.location.href = '../index.html'; }
+  function openSidebar() { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebarOverlay').classList.add('show'); }
+  function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('show'); }
+
+  window.toggleEdit = toggleEdit;
+  window.clearAllData = clearAllData;
+  window.doLogout = doLogout;
+  window.handleLogout = doLogout;
+  window.openSidebar = openSidebar;
+  window.closeSidebar = closeSidebar;
+</script>
+<script src="../js/sw-register.js"></script>
+</body>
+</html>

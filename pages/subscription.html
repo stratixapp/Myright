@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>Plans & Pricing — MyRight</title>
+  <link rel="manifest" href="../manifest.json"/>
+  <meta name="theme-color" content="#070c19"/>
+  <link rel="apple-touch-icon" href="../icons/icon-192.png"/>
+  <link rel="icon" href="../icons/favicon.ico"/>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/main.css"/>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <style>
+    /* Override main.css fonts in app context */
+    .main-content, .plan-card-new, .modal-inner { font-family: 'Sora', sans-serif; }
+
+    /* ── Plan Cards (new style) ─────────────────────────── */
+    .plan-grid { display: flex; flex-direction: column; gap: 14px; }
+
+    .pcard {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 18px;
+      padding: 22px 20px;
+      position: relative;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .pcard.pcard-popular {
+      border-color: rgba(212,168,71,0.5);
+      background: linear-gradient(135deg, rgba(212,168,71,0.04), var(--surface));
+      box-shadow: 0 0 40px rgba(212,168,71,0.06);
+    }
+    .pcard.pcard-active {
+      border-color: rgba(32,199,126,0.45);
+      background: linear-gradient(135deg, rgba(32,199,126,0.03), var(--surface));
+    }
+    .pcard-badge {
+      position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+      background: linear-gradient(135deg, #c8922a, #a0711a);
+      color: #fff; font-size: 10.5px; font-weight: 700;
+      padding: 4px 16px; border-radius: 100px;
+      white-space: nowrap; letter-spacing: .5px;
+      font-family: 'Sora', sans-serif;
+    }
+    .pcard-active-badge {
+      position: absolute; top: 14px; right: 14px;
+      background: rgba(32,199,126,0.12);
+      border: 1px solid rgba(32,199,126,0.3);
+      color: #20c77e; font-size: 10px; font-weight: 700;
+      padding: 3px 10px; border-radius: 100px;
+      font-family: 'Sora', sans-serif;
+    }
+
+    .pcard-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+    .pcard-name { font-size: 17px; font-weight: 700; color: var(--text1); margin-bottom: 4px; }
+    .pcard-desc { font-size: 12.5px; color: var(--text3); }
+
+    .pcard-price {
+      font-family: 'Libre Baskerville', serif;
+      font-size: 30px; font-weight: 700;
+      color: var(--gold); margin: 10px 0 4px;
+      display: flex; align-items: baseline; gap: 6px;
+    }
+    .pcard-price .per { font-family: 'Sora', sans-serif; font-size: 13px; color: var(--text3); font-weight: 400; }
+    .pcard-save { font-size: 12px; font-weight: 700; color: #20c77e; background: rgba(32,199,126,0.1); border: 1px solid rgba(32,199,126,0.2); padding: 2px 9px; border-radius: 100px; margin-left: 6px; }
+
+    .pcard-features {
+      list-style: none; padding: 0; margin: 14px 0 18px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .pcard-features li { font-size: 13px; color: var(--text2); display: flex; align-items: center; gap: 9px; }
+    .pcard-features li .yes { color: #20c77e; font-size: 14px; flex-shrink: 0; }
+    .pcard-features li .no  { color: var(--text3); font-size: 14px; flex-shrink: 0; }
+
+    .pcard-btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 13px; border-radius: 11px;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      border: none; transition: all .2s;
+      font-family: 'Sora', sans-serif;
+    }
+    .pcard-btn-free { background: var(--surface2); color: var(--text3); border: 1.5px solid var(--border2); }
+    .pcard-btn-blue {
+      background: linear-gradient(135deg, #3060e0, #2248c0);
+      color: #fff; border: 1px solid rgba(68,117,255,0.3);
+    }
+    .pcard-btn-blue:hover:not(:disabled) { background: linear-gradient(135deg,#4475ff,#3060e0); box-shadow:0 6px 24px rgba(68,117,255,0.35); transform:translateY(-1px); }
+    .pcard-btn-gold {
+      background: linear-gradient(135deg, #c8922a, #a0711a);
+      color: #fff; border: 1px solid rgba(212,168,71,0.3);
+    }
+    .pcard-btn-gold:hover:not(:disabled) { box-shadow: 0 6px 24px rgba(212,168,71,0.35); transform: translateY(-1px); }
+    .pcard-btn:disabled { opacity: .55; cursor: default; transform: none; }
+
+    /* ── Current plan banner ─── */
+    .current-plan-bar {
+      background: rgba(32,199,126,0.07);
+      border: 1px solid rgba(32,199,126,0.18);
+      border-radius: 12px;
+      padding: 12px 16px; margin-bottom: 22px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; flex-wrap: wrap;
+    }
+    .current-plan-bar .label { font-size: 13px; color: var(--text2); }
+    .current-plan-bar .val { font-weight: 700; color: #20c77e; }
+    .current-plan-bar .active-pill { display:inline-flex;align-items:center;gap:5px;background:rgba(32,199,126,0.12);border:1px solid rgba(32,199,126,0.3);color:#20c77e;font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px; }
+
+    /* ── Tabs ─── */
+    .seg-tabs {
+      display: flex; background: var(--bg2);
+      border: 1px solid var(--border); border-radius: 11px;
+      padding: 3px; gap: 3px; margin-bottom: 22px;
+    }
+    .seg-tab {
+      flex: 1; padding: 9px; text-align: center; border-radius: 8px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: all .2s; color: var(--text3);
+      font-family: 'Sora', sans-serif;
+    }
+    .seg-tab.active { background: var(--surface); color: var(--text1); box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+
+    /* ── Section titles ─── */
+    .section-tag {
+      font-size: 11px; font-weight: 700; letter-spacing: .8px;
+      text-transform: uppercase; color: var(--text3);
+      margin: 24px 0 12px; display: block;
+    }
+
+    /* ── Bundle cards ─── */
+    .bcard {
+      background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: 16px; padding: 18px 18px 16px; margin-bottom: 12px;
+      transition: border-color .2s;
+    }
+    .bcard.bcard-owned { border-color: rgba(32,199,126,0.3); background: linear-gradient(135deg,rgba(32,199,126,0.03),var(--surface)); }
+    .bcard-top { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .bcard-icon { font-size: 30px; }
+    .bcard-title { font-size: 15px; font-weight: 700; color: var(--text1); margin-bottom: 3px; }
+    .bcard-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: rgba(212,168,71,0.1); color: var(--gold); border: 1px solid rgba(212,168,71,0.25); }
+    .bcard-desc { font-size: 13px; color: var(--text2); margin-bottom: 10px; line-height: 1.5; }
+    .bcard-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .bcard-tag { font-size: 11px; background: var(--bg2); border: 1px solid var(--border); color: var(--text3); padding: 3px 8px; border-radius: 6px; }
+    .bcard-pricing { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .bcard-new { font-family: 'Libre Baskerville', serif; font-size: 22px; font-weight: 700; color: var(--gold); }
+    .bcard-orig { font-size: 13px; color: var(--text3); text-decoration: line-through; }
+    .bcard-save-pill { font-size: 11.5px; font-weight: 700; color: #20c77e; background: rgba(32,199,126,0.1); border: 1px solid rgba(32,199,126,0.2); padding: 3px 9px; border-radius: 100px; }
+
+    /* ── Payment Modal ─── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.8); z-index: 600;
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-inner {
+      background: var(--bg2); border: 1px solid var(--border2);
+      border-radius: 22px; padding: 32px 24px;
+      max-width: 360px; width: 100%; text-align: center;
+      position: relative; animation: modalIn .3s ease;
+    }
+    @keyframes modalIn { from{opacity:0;transform:scale(.96) translateY(12px)}to{opacity:1;transform:scale(1) translateY(0)} }
+    .modal-close { position: absolute; top: 14px; right: 16px; font-size: 20px; color: var(--text3); cursor: pointer; transition: color .2s; }
+    .modal-close:hover { color: var(--text1); }
+    .modal-icon { font-size: 48px; margin-bottom: 14px; }
+    .modal-title { font-family: 'Libre Baskerville', serif; font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+    .modal-price { font-family: 'Libre Baskerville', serif; font-size: 32px; font-weight: 700; color: var(--gold); margin: 10px 0 4px; }
+    .modal-desc { font-size: 12px; color: var(--text3); margin-bottom: 14px; }
+
+    /* Legal acceptance in modal */
+    .modal-terms {
+      background: rgba(68,117,255,0.06); border: 1px solid rgba(68,117,255,0.15);
+      border-radius: 10px; padding: 12px 14px; margin-bottom: 18px; text-align: left;
+    }
+    .modal-terms-label { display: flex; align-items: flex-start; gap: 9px; cursor: pointer; }
+    .modal-terms-label input[type=checkbox] { margin-top: 2px; accent-color: var(--blue); cursor: pointer; flex-shrink: 0; }
+    .modal-terms-label span { font-size: 12px; color: var(--text2); line-height: 1.6; }
+    .modal-terms-label a { color: var(--gold); text-decoration: underline; text-underline-offset: 2px; }
+
+    .modal-btns { display: flex; flex-direction: column; gap: 8px; }
+    .modal-pay-btn {
+      padding: 13px; background: linear-gradient(135deg,#c8922a,#a0711a); color: #fff;
+      border: none; border-radius: 11px; font-size: 14px; font-weight: 700;
+      cursor: pointer; font-family: 'Sora', sans-serif; transition: all .2s;
+    }
+    .modal-pay-btn:hover:not(:disabled) { box-shadow: 0 6px 20px rgba(212,168,71,0.3); transform: translateY(-1px); }
+    .modal-pay-btn:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+    .modal-cancel-btn {
+      padding: 11px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 11px; font-size: 13px; color: var(--text2);
+      cursor: pointer; font-family: 'Sora', sans-serif; transition: all .2s;
+    }
+    .modal-cancel-btn:hover { border-color: var(--border2); color: var(--text1); }
+
+    /* Test mode notice */
+    .test-notice {
+      background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.2);
+      border-radius: 10px; padding: 10px 14px; font-size: 12px; color: #f59e0b;
+      margin-bottom: 20px; display: flex; align-items: flex-start; gap: 8px; line-height: 1.5;
+    }
+
+    /* Expiry info */
+    .plan-expiry { font-size: 11.5px; color: var(--text3); margin-top: 4px; }
+
+    .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .toast { position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--surface);border:1px solid var(--border2);border-radius:100px;padding:11px 22px;font-size:13px;font-weight:500;box-shadow:0 8px 32px rgba(0,0,0,.45);z-index:999;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap }
+    .toast.show { opacity:1;transform:translateX(-50%) translateY(0) }
+    .toast.success { border-color:rgba(32,199,126,.35);color:#68d391 }
+    .toast.error { border-color:rgba(240,79,79,.35);color:#fc8181 }
+    .toast.info { border-color:rgba(68,117,255,.35);color:#93b4ff }
+  </style>
+</head>
+<body>
+
+<div class="app-topbar">
+  <button class="hamburger-btn" onclick="openSidebar()">☰</button>
+  <a href="../index.html" class="logo" style="gap:8px;">
+    <div class="logo-icon" style="width:30px;height:30px;font-size:15px;">⚖️</div>
+    <span class="logo-text" style="font-size:18px;font-family:'Libre Baskerville',serif;">MyRight</span>
+  </a>
+  <div style="width:38px;"></div>
+</div>
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <a href="../index.html" class="logo">
+        <div class="logo-icon">⚖️</div>
+        <span class="logo-text" style="font-family:'Libre Baskerville',serif;">MyRight</span>
+      </a>
+      <span class="sidebar-tagline">Know Your Rights. Own Your Documents.</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a class="sidebar-item" href="dashboard.html"><span class="sidebar-icon">🏠</span> Dashboard</a>
+      <a class="sidebar-item" href="generate.html"><span class="sidebar-icon">✨</span> Generate Document</a>
+      <a class="sidebar-item" href="vault.html"><span class="sidebar-icon">🗂️</span> My Documents</a>
+      <a class="sidebar-item" href="legal-advisor.html"><span class="sidebar-icon">👨‍⚖️</span> Legal Advisor</a>
+      <a class="sidebar-item" href="risk-analyzer.html"><span class="sidebar-icon">🔍</span> Risk Analyzer</a>
+      <a class="sidebar-item" href="legal-chat.html"><span class="sidebar-icon">💬</span> Legal Support</a>
+      <a class="sidebar-item active" href="subscription.html"><span class="sidebar-icon">⭐</span> Subscription</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <a class="sidebar-item" href="profile.html"><span class="sidebar-icon">👤</span> Profile</a>
+      <button class="sidebar-item" onclick="handleLogout()"><span class="sidebar-icon">🚪</span> Sign Out</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="page-title" style="font-family:'Libre Baskerville',serif;">Plans &amp; Pricing</h1>
+      <p class="page-sub">Transparent pricing — no hidden charges, cancel anytime</p>
+    </div>
+
+    <!-- Current Plan Banner -->
+    <div class="current-plan-bar">
+      <div class="label">Your current plan: <span class="val" id="currentPlanName">Free</span>
+        <span class="plan-expiry" id="planExpiry"></span>
+      </div>
+      <span class="active-pill">✓ Active</span>
+    </div>
+
+    <!-- Test mode notice -->
+    <div class="test-notice">
+      <span>⚡</span>
+      <span><strong>Test Mode:</strong> Payments are simulated. Use the "Pay" button to upgrade instantly for testing. No real money is charged.</span>
+    </div>
+
+    <!-- Tabs -->
+    <div class="seg-tabs">
+      <div class="seg-tab active" onclick="showTab('plans',this)">📋 Subscription Plans</div>
+      <div class="seg-tab" onclick="showTab('bundles',this)">🎁 Bundle Packs</div>
+    </div>
+
+    <!-- PLANS TAB -->
+    <div id="tabPlans">
+      <div class="plan-grid">
+
+        <!-- FREE -->
+        <div class="pcard" id="freePlanCard">
+          <div id="freeActiveBadge" class="pcard-active-badge" style="display:none">✓ Current Plan</div>
+          <div class="pcard-header">
+            <div>
+              <div class="pcard-name">🆓 Free Plan</div>
+              <div class="pcard-desc">Try MyRight with no commitment</div>
+            </div>
+          </div>
+          <div class="pcard-price">₹0 <span class="per">forever</span></div>
+          <ul class="pcard-features">
+            <li><span class="yes">✓</span> 2 documents per month</li>
+            <li><span class="yes">✓</span> PDF &amp; DOCX download</li>
+            <li><span class="yes">✓</span> Digital signature pad</li>
+            <li><span class="no">✗</span> All 100+ document types</li>
+            <li><span class="no">✗</span> Document vault</li>
+            <li><span class="no">✗</span> Premium templates</li>
+          </ul>
+          <button class="pcard-btn pcard-btn-free" id="freePlanBtn" disabled>✓ Free Plan</button>
+        </div>
+
+        <!-- PRO MONTHLY -->
+        <div class="pcard pcard-popular" id="proMonthlyCard">
+          <div class="pcard-badge">⭐ MOST POPULAR</div>
+          <div id="proMonthlyActiveBadge" class="pcard-active-badge" style="display:none">✓ Active</div>
+          <div class="pcard-header">
+            <div>
+              <div class="pcard-name">⭐ Pro Monthly</div>
+              <div class="pcard-desc">Unlimited access to everything</div>
+            </div>
+          </div>
+          <div class="pcard-price">₹199 <span class="per">/month</span></div>
+          <ul class="pcard-features">
+            <li><span class="yes">✓</span> All 100+ legal document types</li>
+            <li><span class="yes">✓</span> Unlimited document generation</li>
+            <li><span class="yes">✓</span> Document vault storage</li>
+            <li><span class="yes">✓</span> PDF &amp; DOCX export</li>
+            <li><span class="yes">✓</span> Digital signature pad</li>
+            <li><span class="yes">✓</span> WhatsApp share</li>
+            <li><span class="yes">✓</span> Priority support</li>
+          </ul>
+          <button class="pcard-btn pcard-btn-gold" id="proMonthlyBtn" onclick="openPayModal('pro', 199)">
+            ⭐ Subscribe — ₹199/mo
+          </button>
+        </div>
+
+        <!-- PRO YEARLY -->
+        <div class="pcard" id="proYearlyCard">
+          <div id="proYearlyActiveBadge" class="pcard-active-badge" style="display:none">✓ Active</div>
+          <div class="pcard-header">
+            <div>
+              <div class="pcard-name">🏆 Pro Yearly</div>
+              <div class="pcard-desc">Best value — just ₹125/month billed annually</div>
+            </div>
+          </div>
+          <div class="pcard-price">
+            ₹1499 <span class="per">/year</span>
+            <span class="pcard-save">Save ₹889</span>
+          </div>
+          <ul class="pcard-features">
+            <li><span class="yes">✓</span> Everything in Pro Monthly</li>
+            <li><span class="yes">✓</span> 12 months full access</li>
+            <li><span class="yes">✓</span> Yearly savings of ₹889</li>
+            <li><span class="yes">✓</span> Early access to new features</li>
+          </ul>
+          <button class="pcard-btn pcard-btn-blue" id="proYearlyBtn" onclick="openPayModal('yearly', 1499)">
+            🏆 Subscribe — ₹1499/yr
+          </button>
+        </div>
+
+      </div><!-- /plan-grid -->
+
+      <!-- Legal note under plans -->
+      <div style="font-size:12px;color:var(--text3);line-height:1.7;margin-top:18px;padding:14px 16px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:10px;">
+        💳 Payments processed by Razorpay (PCI-DSS compliant). All prices include GST.
+        Subscriptions auto-renew until cancelled. Cancel anytime from Profile → Subscription.
+        By subscribing you agree to our <a href="terms.html" style="color:var(--gold);text-decoration:underline;">Terms of Service</a>
+        and <a href="privacy.html" style="color:var(--gold);text-decoration:underline;">Privacy Policy</a>.
+        <br>⚠️ MyRight is not a law firm. Documents are templates only and do not constitute legal advice.
+      </div>
+    </div>
+
+    <!-- BUNDLES TAB -->
+    <div id="tabBundles" style="display:none;">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6;">
+        Buy a curated pack of related documents at a steep one-time discount. Each pack includes unlimited downloads &amp; edits forever.
+      </p>
+      <div id="bundleList"></div>
+    </div>
+
+  </main>
+</div>
+
+<nav class="bottom-nav">
+  <a class="bottom-nav-item" href="dashboard.html"><span class="bn-icon">🏠</span>Home</a>
+  <a class="bottom-nav-item" href="generate.html"><span class="bn-icon">✨</span>Generate</a>
+  <a class="bottom-nav-item" href="vault.html"><span class="bn-icon">🗂️</span>Vault</a>
+  <a class="bottom-nav-item" href="legal-advisor.html"><span class="bn-icon">👨‍⚖️</span>Advisor</a>
+  <a class="bottom-nav-item active" href="profile.html"><span class="bn-icon">👤</span>Profile</a>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<!-- ── Payment Confirmation Modal ─────────────────────────────────────────── -->
+<div class="modal-overlay" id="payModal">
+  <div class="modal-inner">
+    <span class="modal-close" onclick="closePayModal()">✕</span>
+    <div class="modal-icon" id="modalIcon">⭐</div>
+    <div class="modal-title" id="modalTitle">Upgrade to Pro</div>
+    <div class="modal-price" id="modalPrice">₹199</div>
+    <div class="modal-desc" id="modalDesc">Monthly subscription — cancel anytime</div>
+
+    <!-- Legal acceptance -->
+    <div class="modal-terms">
+      <label class="modal-terms-label">
+        <input type="checkbox" id="modalTermsChk"/>
+        <span>
+          I agree to MyRight's <a href="terms.html" target="_blank">Terms of Service</a>,
+          <a href="privacy.html" target="_blank">Privacy Policy</a>, and authorize this payment.
+          I understand MyRight does not provide legal advice.
+        </span>
+      </label>
+    </div>
+
+    <div class="modal-btns">
+      <button class="modal-pay-btn" id="rzpBtn" onclick="processPayment()">
+        💳 Pay with Razorpay
+      </button>
+      <button class="modal-cancel-btn" onclick="closePayModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="../js/firebase-auth.js"></script>
+<script>
+  // ── Auth check ───────────────────────────────────────────
+  const _sess = MRAuth.requireAuth();
+  if (!_sess) throw new Error('redirect');
+
+  // ── Read fresh plan (handles expiry) ─────────────────────
+  const userPlan = MRAuth.getPlan();
+  const isPro = MRAuth.isPro();
+
+  // ── Update current plan display ──────────────────────────
+  const planLabel = userPlan==='yearly' ? '🏆 Pro Yearly' : userPlan==='pro' ? '⭐ Pro Monthly' : '🆓 Free';
+  document.getElementById('currentPlanName').textContent = planLabel;
+
+  // Show expiry for pro plans
+  if (isPro) {
+    MRAuth.getUserData().then(userData => { if (userData?.planExpiry) {
+      const exp = new Date(userData.planExpiry);
+      document.getElementById('planExpiry').textContent = ` · Renews ${exp.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}`;
+    }}).catch(()=>{});
+  }
+
+  // ── Set active state on cards ────────────────────────────
+  if (isPro) {
+    const activeCard = userPlan==='yearly' ? 'proYearlyCard' : 'proMonthlyCard';
+    const activeBadge = userPlan==='yearly' ? 'proYearlyActiveBadge' : 'proMonthlyActiveBadge';
+    const activeBtn = userPlan==='yearly' ? 'proYearlyBtn' : 'proMonthlyBtn';
+    const otherBtn  = userPlan==='yearly' ? 'proMonthlyBtn' : 'proYearlyBtn';
+
+    document.getElementById(activeCard).classList.add('pcard-active');
+    document.getElementById(activeBadge).style.display = 'inline-flex';
+
+    const aBtn = document.getElementById(activeBtn);
+    aBtn.textContent = '✓ Current Plan'; aBtn.disabled = true;
+
+    // Other plan: show switch option
+    const oBtn = document.getElementById(otherBtn);
+    if (userPlan === 'pro') {
+      oBtn.textContent = '🏆 Switch to Yearly — ₹1499'; oBtn.onclick=()=>openPayModal('yearly',1499);
+    } else {
+      oBtn.textContent = '⭐ Switch to Monthly'; oBtn.onclick=()=>openPayModal('pro',199);
+    }
+
+    // Free plan: downgrade button
+    const freeBtn = document.getElementById('freePlanBtn');
+    freeBtn.textContent = 'Downgrade to Free'; freeBtn.disabled = false;
+    freeBtn.classList.remove('pcard-btn-free'); freeBtn.style.cursor='pointer';
+    freeBtn.onclick = () => {
+      if (confirm('Downgrade to Free? You will lose Pro access immediately.')) {
+        MRAuth.updateField('plan','free'); MRAuth.updateField('planExpiry',null);
+        const s=MRAuth.currentUser();if(s){s.plan='free';s.planExpiry=null;localStorage.setItem('mr_session',JSON.stringify(s));}
+        showToast('Downgraded to Free plan.','info');
+        setTimeout(()=>location.reload(),1200);
+      }
+    };
+  } else {
+    // Free plan active
+    document.getElementById('freePlanCard').classList.add('pcard-active');
+    document.getElementById('freeActiveBadge').style.display = 'inline-flex';
+  }
+
+  // ── Tabs ─────────────────────────────────────────────────
+  function showTab(tab, el) {
+    document.getElementById('tabPlans').style.display = tab==='plans' ? '' : 'none';
+    document.getElementById('tabBundles').style.display = tab==='bundles' ? '' : 'none';
+    document.querySelectorAll('.seg-tab').forEach(t=>t.classList.remove('active'));
+    el.classList.add('active');
+  }
+  if (window.location.hash.includes('bundle')) showTab('bundles', document.querySelectorAll('.seg-tab')[1]);
+
+  // ── Render bundles ────────────────────────────────────────
+  const bundleList = document.getElementById('bundleList');
+  async function renderBundles() {
+    const purchases = await MRPurchases.getAll(_sess.uid);
+    const ownedIds = new Set(purchases.filter(p=>p.bundleId).map(p=>p.bundleId));
+    bundleList.innerHTML = BUNDLES.map(b => {
+    const owned = ownedIds.has(b.id);
+    const savings = b.normalPrice - b.bundlePrice;
+    return `<div class="bcard ${owned?'bcard-owned':''}" id="${b.id}">
+      <div class="bcard-top">
+        <div class="bcard-icon">${b.icon}</div>
+        <div style="flex:1">
+          <div class="bcard-title">${b.name} ${owned?'<span style="font-size:12px;color:#20c77e;font-weight:700;">✓ Owned</span>':''}</div>
+          <span class="bcard-badge">${b.badge}</span>
+        </div>
+      </div>
+      <div class="bcard-desc">${b.description}</div>
+      <div class="bcard-tags">${b.docNames.map(n=>`<span class="bcard-tag">${n}</span>`).join('')}</div>
+      <div class="bcard-pricing">
+        <span class="bcard-new">₹${b.bundlePrice}</span>
+        <span class="bcard-orig">₹${b.normalPrice}</span>
+        <span class="bcard-save-pill">Save ₹${savings}</span>
+      </div>
+      ${owned
+        ? `<button class="pcard-btn" style="background:rgba(32,199,126,.1);border:1px solid rgba(32,199,126,.3);color:#20c77e;cursor:default;" disabled>✓ Purchased</button>`
+        : `<button class="pcard-btn pcard-btn-gold" onclick="openBundlePayModal('${b.id}','${b.name}',${b.bundlePrice})">🎁 Buy Pack — ₹${b.bundlePrice}</button>`
+      }
+    </div>`;
+  }).join('');
+  } // end renderBundles
+  renderBundles().catch(()=>{});
+
+  // ── Payment modal ─────────────────────────────────────────
+  let _pendingPlan=null, _pendingBundleId=null, _pendingBundleName='', _pendingAmount=0;
+
+  function openPayModal(planId, amount) {
+    _pendingPlan=planId; _pendingBundleId=null; _pendingAmount=amount;
+    document.getElementById('modalIcon').textContent=planId==='yearly'?'🏆':'⭐';
+    document.getElementById('modalTitle').textContent=planId==='yearly'?'Upgrade to Pro Yearly':'Upgrade to Pro Monthly';
+    document.getElementById('modalPrice').textContent='₹'+amount;
+    document.getElementById('modalDesc').textContent=planId==='yearly'?'12 months full access · Early feature access':'Monthly subscription · Cancel anytime';
+    document.getElementById('rzpBtn').textContent='💳 Pay ₹'+amount+' with Razorpay';
+    document.getElementById('modalTermsChk').checked=false;
+    document.getElementById('payModal').classList.add('open');
+  }
+
+  function openBundlePayModal(bundleId, bundleName, amount) {
+    _pendingPlan=null; _pendingBundleId=bundleId; _pendingBundleName=bundleName; _pendingAmount=amount;
+    document.getElementById('modalIcon').textContent='🎁';
+    document.getElementById('modalTitle').textContent=bundleName;
+    document.getElementById('modalPrice').textContent='₹'+amount;
+    document.getElementById('modalDesc').textContent='One-time purchase · Unlimited downloads &amp; edits';
+    document.getElementById('rzpBtn').textContent='💳 Pay ₹'+amount+' with Razorpay';
+    document.getElementById('modalTermsChk').checked=false;
+    document.getElementById('payModal').classList.add('open');
+  }
+
+  function closePayModal() {
+    document.getElementById('payModal').classList.remove('open');
+  }
+
+  function processPayment() {
+    if (!document.getElementById('modalTermsChk').checked) {
+      showToast('Please accept the Terms of Service to continue.','error'); return;
+    }
+    const btn=document.getElementById('rzpBtn');
+    btn.innerHTML='<span class="spinner"></span>Opening payment…'; btn.disabled=true;
+
+    const options = {
+      key: 'rzp_test_Say71A0DMB0k0h', // Test key — replace with live key before production
+      amount: _pendingAmount * 100,
+      currency: 'INR',
+      name: 'MyRight',
+      description: _pendingPlan ? (_pendingPlan==='yearly'?'Pro Yearly Plan':'Pro Monthly Plan') : _pendingBundleName,
+      image: '../icons/icon-192.png',
+      prefill: { name: _sess.name, email: _sess.email },
+      theme: { color: '#c8922a' },
+      handler: function(resp) { onPaySuccess(resp); },
+      modal: { ondismiss: function(){ btn.textContent='💳 Pay ₹'+_pendingAmount+' with Razorpay'; btn.disabled=false; } }
+    };
+    try {
+      const rzp = new Razorpay(options);
+      rzp.on('payment.failed',r=>{ showToast('Payment failed: '+r.error.description,'error'); btn.textContent='💳 Pay ₹'+_pendingAmount+' with Razorpay'; btn.disabled=false; });
+      rzp.open();
+    } catch(e) {
+      // Razorpay failed to load — show error, never simulate payment
+      showToast('Payment service unavailable. Check your connection and try again.', 'error');
+      btn.textContent = '💳 Pay ₹' + _pendingAmount + ' with Razorpay';
+      btn.disabled = false;
+    }
+  }
+
+  async function onPaySuccess(resp) {
+    closePayModal();
+    if (_pendingPlan) {
+      await MRAuth.upgradePlan(_pendingPlan);
+      showToast('🎉 Upgraded to '+(_pendingPlan==='yearly'?'Pro Yearly':'Pro Monthly')+'!','success');
+    } else if (_pendingBundleId) {
+      const bundle = BUNDLES.find(b=>b.id===_pendingBundleId);
+      await MRPurchases.addPurchase(_sess.uid,'bundle',_pendingBundleId,_pendingBundleName,_pendingAmount,{bundleDocIds:bundle?.docs||[]});
+      showToast('🎁 Bundle purchased! Access all docs now.','success');
+    }
+    setTimeout(()=>location.reload(),1600);
+  }
+
+  // ── Helpers ───────────────────────────────────────────────
+  function showToast(msg,type='success'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast show ${type}`;setTimeout(()=>t.className='toast',3500)}
+  function handleLogout(){ MRAuth.signOut(); window.location.href='../index.html'; }
+  function openSidebar(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebarOverlay').classList.add('show'); }
+  function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('show'); }
+
+  // Close modal on overlay click
+  document.getElementById('payModal').addEventListener('click', e=>{ if(e.target===document.getElementById('payModal')) closePayModal(); });
+</script>
+<script src="../js/sw-register.js"></script>
+</body>
+</html>
