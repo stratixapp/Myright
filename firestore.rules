@@ -1,0 +1,84 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuth() { return request.auth != null; }
+    function isOwner(uid) { return isAuth() && request.auth.uid == uid; }
+
+    // Admin check: UID-based only (no custom claim dependency)
+    // This works even before token refresh propagates
+    function isAdmin() {
+      return isAuth() && request.auth.uid == 'UDucBb1LMVWrOqPoJDrVEfqPXM2';
+    }
+
+    function ownsNewDoc(f) { return isAuth() && request.resource.data[f] == request.auth.uid; }
+    function ownsExistingDoc(f) { return isAuth() && resource.data[f] == request.auth.uid; }
+
+    // users
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // documents
+    match /documents/{docId} {
+      allow read: if isAuth() && (ownsExistingDoc('userId') || isAdmin());
+      allow create: if ownsNewDoc('userId');
+      allow update: if isAuth() && (ownsExistingDoc('userId') || isAdmin());
+      allow delete: if isAuth() && (ownsExistingDoc('userId') || isAdmin());
+    }
+
+    // purchases — frontend can read own, admin reads all, only admin writes
+    match /purchases/{purchaseId} {
+      allow read: if isAuth() && (ownsExistingDoc('userId') || isAdmin());
+      allow create: if isAuth() && ownsNewDoc('userId'); // direct mode fallback
+      allow update, delete: if isAdmin();
+    }
+
+    // subscriptions
+    match /subscriptions/{subId} {
+      allow read: if isAuth() && (ownsExistingDoc('userId') || isAdmin());
+      allow create, update, delete: if isAdmin();
+    }
+
+    // chats — user owns their room, admin accesses all
+    match /chats/{roomId} {
+      allow read, write: if
+        (isAuth() && roomId == ('room_' + request.auth.uid)) || isAdmin();
+
+      match /messages/{msgId} {
+        allow read: if
+          (isAuth() && roomId == ('room_' + request.auth.uid)) || isAdmin();
+        allow create: if
+          (isAuth() && roomId == ('room_' + request.auth.uid)) || isAdmin();
+        allow update: if
+          (isAuth() && roomId == ('room_' + request.auth.uid)) || isAdmin();
+        allow delete: if isAdmin();
+      }
+    }
+
+    // adminLogs — admin only
+    match /adminLogs/{logId} {
+      allow read, write: if isAdmin();
+    }
+
+    // supportTickets
+    match /supportTickets/{ticketId} {
+      allow read: if isAuth() && (ownsExistingDoc('userId') || isAdmin());
+      allow create: if ownsNewDoc('userId');
+      allow update, delete: if isAdmin();
+    }
+
+    // analytics
+    match /analytics/{uid} {
+      allow read, write: if isOwner(uid) || isAdmin();
+    }
+
+    // deny everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
