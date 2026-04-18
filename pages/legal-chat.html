@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="theme-color" content="#070c19"/>
+  <title>Legal Support — MyRight</title>
+  <link rel="manifest" href="../manifest.json"/>
+  <link rel="apple-touch-icon" href="../icons/icon-192.png"/>
+  <link rel="icon" href="../icons/favicon.ico"/>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/main.css"/>
+  <!-- Firebase SDKs must load before any script that uses firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <style>
+    :root{
+      --chat-bg:#04080f; --chat-surface:#0b1220; --chat-surface2:#0f1829;
+      --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.11);
+      --text1:#f0f4ff; --text2:#7e92b4; --text3:#3d5070;
+      --gold:#d4a847; --blue:#4475ff; --green:#20c77e; --red:#f04f4f;
+      --topbar-h:56px; --safe-bottom:env(safe-area-inset-bottom,0px);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+    /* Full-viewport flex column — chat-area is the only scroller */
+    html{height:100%; height:-webkit-fill-available;}
+    body{
+      font-family:'Sora',sans-serif;
+      background:var(--chat-bg); color:var(--text1);
+      display:flex; flex-direction:column;
+      min-height:100vh; min-height:-webkit-fill-available;
+      max-height:100vh; max-height:-webkit-fill-available;
+      overflow:hidden;
+      position:fixed; inset:0;
+    }
+
+    /* ── Top bar ── */
+    .chat-topbar{height:var(--topbar-h);background:var(--chat-surface);border-bottom:1px solid var(--border2);display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0;z-index:10;position:relative;}
+    .chat-topbar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(212,168,71,0.3),transparent);}
+    .topbar-back{width:36px;height:36px;border-radius:10px;background:var(--chat-surface2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;flex-shrink:0;text-decoration:none;color:var(--text1);}
+    .topbar-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#1a2e50,#0a1a35);border:1.5px solid rgba(212,168,71,0.4);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+    .topbar-info{flex:1;min-width:0;}
+    .topbar-name{font-family:'Libre Baskerville',serif;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .topbar-status{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--text3);margin-top:1px;}
+    .status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;box-shadow:0 0 6px rgba(32,199,126,0.5);animation:pulse-dot 2.5s ease-in-out infinite;}
+    @keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.4}}
+    .topbar-badge{background:rgba(212,168,71,0.1);border:1px solid rgba(212,168,71,0.25);border-radius:8px;padding:4px 10px;font-size:10px;font-weight:700;color:var(--gold);letter-spacing:.4px;flex-shrink:0;}
+
+    /* ── Offline banner ── */
+    .offline-banner{background:rgba(240,79,79,0.1);border-bottom:1px solid rgba(240,79,79,0.2);padding:8px 16px;font-size:12px;color:#fc8181;text-align:center;display:none;flex-shrink:0;}
+    .offline-banner.show{display:block;}
+
+    /* ── Counter pill ── */
+    .counter-pill{margin:8px 16px 0;display:none;align-items:center;gap:6px;background:rgba(68,117,255,0.08);border:1px solid rgba(68,117,255,0.2);border-radius:100px;padding:5px 14px;font-size:12px;color:var(--text2);flex-shrink:0;width:fit-content;}
+    .counter-pill.warn{background:rgba(212,168,71,0.08);border-color:rgba(212,168,71,0.3);color:var(--gold);}
+
+    /* ── Paywall bar ── */
+    .paywall-bar{margin:8px 16px 4px;background:rgba(212,168,71,0.07);border:1.5px solid rgba(212,168,71,0.35);border-radius:16px;padding:16px;display:none;flex-direction:column;gap:12px;flex-shrink:0;}
+    .paywall-bar.show{display:flex;}
+    .paywall-row{display:flex;gap:12px;align-items:flex-start;}
+    .paywall-emoji{font-size:26px;flex-shrink:0;}
+    .paywall-title{font-family:'Libre Baskerville',serif;font-size:15px;font-weight:700;margin-bottom:4px;}
+    .paywall-sub{font-size:12.5px;color:var(--text2);line-height:1.6;}
+    .paywall-price-row{display:flex;align-items:baseline;gap:6px;}
+    .paywall-price{font-family:'Libre Baskerville',serif;font-size:26px;font-weight:700;color:var(--gold);}
+    .paywall-price-note{font-size:12px;color:var(--text3);}
+    .paywall-btn{width:100%;padding:13px;background:linear-gradient(135deg,#c8922a,#a0711a);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Sora',sans-serif;transition:all .2s;}
+    .paywall-btn:hover:not(:disabled){box-shadow:0 6px 20px rgba(212,168,71,0.3);transform:translateY(-1px);}
+    .paywall-btn:disabled{opacity:.55;cursor:not-allowed;transform:none;}
+
+    /* ── Notice bar ── */
+    .notice-bar{margin:8px 16px 4px;background:rgba(212,168,71,0.06);border:1px solid rgba(212,168,71,0.18);border-radius:10px;padding:9px 14px;font-size:12px;color:var(--text3);display:flex;align-items:center;gap:8px;line-height:1.5;flex-shrink:0;}
+
+    /* ── Chat area — ONLY scrolling region ── */
+    .chat-area{
+      flex:1; min-height:0;
+      overflow-y:auto; overflow-x:hidden;
+      -webkit-overflow-scrolling:touch;
+      overscroll-behavior-y:contain;
+      padding:20px 16px 16px;
+      display:flex; flex-direction:column; gap:4px;
+      scroll-behavior:smooth;
+    }
+    .chat-area::-webkit-scrollbar{width:3px;}
+    .chat-area::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+
+    .date-sep{display:flex;align-items:center;gap:10px;margin:14px 0 10px;color:var(--text3);font-size:11px;}
+    .date-sep::before,.date-sep::after{content:'';flex:1;height:1px;background:var(--border);}
+    .msg-row{display:flex;margin-bottom:3px;animation:msgIn .25s ease both;}
+    @keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .msg-row.user{justify-content:flex-end;}
+    .msg-row.admin{justify-content:flex-start;}
+    .bubble{max-width:78%;padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.6;position:relative;}
+    .msg-row.user .bubble{background:linear-gradient(135deg,#2a4fd6,#1e3bb8);border:1px solid rgba(68,117,255,0.3);border-bottom-right-radius:4px;color:#fff;}
+    .msg-row.admin .bubble{background:var(--chat-surface);border:1px solid var(--border2);border-bottom-left-radius:4px;color:var(--text1);}
+    .bubble-time{font-size:10.5px;margin-top:4px;display:block;opacity:.55;text-align:right;}
+    .msg-row.admin .bubble-time{text-align:left;}
+    .bubble-status{font-size:11px;margin-left:4px;}
+    .bubble-status.sent{color:rgba(255,255,255,0.5);}
+    .bubble-status.read{color:#68d391;}
+    .msg-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#1a2e50,#0a1a35);border:1px solid rgba(212,168,71,0.3);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;align-self:flex-end;margin-right:8px;}
+
+    /* ── Welcome ── */
+    .chat-welcome{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px 24px;gap:0;}
+    .welcome-seal{width:72px;height:72px;background:linear-gradient(145deg,#1a2e50,#0a1a35);border:1.5px solid rgba(212,168,71,0.35);border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:34px;margin-bottom:18px;box-shadow:0 8px 32px rgba(0,0,0,0.4);}
+    .welcome-title{font-family:'Libre Baskerville',serif;font-size:20px;font-weight:700;margin-bottom:10px;}
+    .welcome-sub{font-size:13.5px;color:var(--text2);line-height:1.75;max-width:320px;margin-bottom:24px;}
+    .welcome-hints{display:flex;flex-direction:column;gap:8px;width:100%;max-width:340px;}
+    .hint-chip{background:var(--chat-surface);border:1px solid var(--border2);border-radius:100px;padding:9px 16px;font-size:13px;color:var(--text2);cursor:pointer;transition:all .2s;text-align:left;display:flex;align-items:center;gap:8px;}
+    .hint-chip:hover{border-color:rgba(68,117,255,0.4);color:var(--text1);background:#0d1829;}
+
+    /* ── Input bar — flex-shrink:0 keeps it pinned ── */
+    .input-bar{
+      background:var(--chat-surface);
+      border-top:1px solid var(--border2);
+      display:flex; align-items:center;
+      padding:8px 14px;
+      padding-bottom:calc(var(--safe-bottom) + 8px);
+      gap:10px; flex-shrink:0; z-index:10;
+    }
+    .input-wrap{flex:1;background:var(--chat-surface2);border:1.5px solid var(--border2);border-radius:22px;display:flex;align-items:center;padding:0 16px;gap:8px;transition:border-color .2s;}
+    .input-wrap:focus-within{border-color:rgba(68,117,255,0.45);box-shadow:0 0 0 3px rgba(68,117,255,0.08);}
+    #msgInput{flex:1;background:transparent;border:none;outline:none;font-family:'Sora',sans-serif;font-size:16px;color:var(--text1);padding:11px 0;resize:none;max-height:100px;line-height:1.5;-webkit-user-select:text;user-select:text;}
+    #msgInput::placeholder{color:var(--text3);}
+    #msgInput:disabled{opacity:.4;}
+    .char-count{font-size:11px;color:var(--text3);flex-shrink:0;}
+    .char-count.warn{color:#f59e0b;}
+    .send-btn{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#3060e0,#2248c0);border:1px solid rgba(68,117,255,0.3);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;flex-shrink:0;transition:all .2s;}
+    .send-btn:not(:disabled):hover{background:linear-gradient(135deg,#4475ff,#3060e0);box-shadow:0 4px 16px rgba(68,117,255,0.4);transform:scale(1.05);}
+    .send-btn:disabled{opacity:.35;cursor:not-allowed;}
+
+    /* ── Toast ── */
+    .toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(12px);background:var(--chat-surface);border:1px solid var(--border2);border-radius:100px;padding:10px 20px;font-size:13px;font-weight:500;box-shadow:0 8px 32px rgba(0,0,0,.4);z-index:999;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+    .toast.success{border-color:rgba(32,199,126,.35);color:#68d391;}
+    .toast.error{border-color:rgba(240,79,79,.35);color:#fc8181;}
+  </style>
+</head>
+<body>
+
+<div class="offline-banner" id="offlineBanner">⚡ No internet connection</div>
+
+<div class="chat-topbar">
+  <a href="dashboard.html" class="topbar-back">←</a>
+  <div class="topbar-avatar">⚖️</div>
+  <div class="topbar-info">
+    <div class="topbar-name">MyRight Legal Support</div>
+    <div class="topbar-status">
+      <span class="status-dot"></span>
+      <span>Legal team · Replies within 24 hrs</span>
+    </div>
+  </div>
+  <div class="topbar-badge">LIVE</div>
+</div>
+
+<div class="counter-pill" id="counterPill">💬 <span id="counterText">0 / 3 free messages</span></div>
+
+<div class="notice-bar" id="noticeBar">
+  <span>⏱️</span>
+  <span>Our legal team replies within <strong>24 hours</strong>. First <strong>3 questions are free</strong>. All chats are private &amp; confidential.</span>
+</div>
+
+<div class="paywall-bar" id="paywallBar">
+  <div class="paywall-row">
+    <div class="paywall-emoji">⚖️</div>
+    <div>
+      <div class="paywall-title">Unlock Unlimited Legal Support</div>
+      <div class="paywall-sub">You've used your 3 free questions. Pay once to continue this conversation — no monthly plan needed.</div>
+    </div>
+  </div>
+  <div class="paywall-price-row">
+    <div class="paywall-price">₹49</div>
+    <div class="paywall-price-note">one-time · this conversation only</div>
+  </div>
+  <button class="paywall-btn" id="paywallBtn" onclick="openPaywall()">💳 Pay ₹49 &amp; Continue Chat</button>
+</div>
+
+<div class="chat-area" id="chatArea">
+  <div class="chat-welcome" id="welcomeState">
+    <div class="welcome-seal">⚖️</div>
+    <div class="welcome-title">Legal Support Chat</div>
+    <div class="welcome-sub">Ask any legal question. Our team will personally review and reply — usually within 24 hours. <strong>First 3 questions free.</strong></div>
+    <div class="welcome-hints">
+      <div class="hint-chip" onclick="fillHint(this)">📄 Is my rent agreement legally valid?</div>
+      <div class="hint-chip" onclick="fillHint(this)">🏠 What rights do I have as a tenant in India?</div>
+      <div class="hint-chip" onclick="fillHint(this)">💼 Can my employer withhold my salary?</div>
+      <div class="hint-chip" onclick="fillHint(this)">📝 How do I file a consumer complaint?</div>
+    </div>
+  </div>
+</div>
+
+<div class="input-bar">
+  <div class="input-wrap">
+    <textarea id="msgInput" placeholder="Type your legal question…" rows="1" maxlength="1000"></textarea>
+    <span class="char-count" id="charCount"></span>
+  </div>
+  <button class="send-btn" id="sendBtn" disabled>➤</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- firebase-auth.js must load BEFORE the inline script below -->
+<script src="../js/firebase-auth.js"></script>
+<script src="../js/sw-register.js"></script>
+
+<script>
+(function () {
+  'use strict';
+
+  // ── Firebase init ────────────────────────────────────────────────────────────
+  var FB_CFG = {
+    apiKey:            'AIzaSyAO6trpZKCvCm4xwuuiCMlLVhmJOdZ_Krc',
+    authDomain:        'my-right-c8924.firebaseapp.com',
+    projectId:         'my-right-c8924',
+    storageBucket:     'my-right-c8924.firebasestorage.app',
+    messagingSenderId: '879694032704',
+    appId:             '1:879694032704:web:c36729fe7fa249076b94a5'
+  };
+
+  var db = null;
+  try {
+    if (typeof firebase !== 'undefined') {
+      if (!firebase.apps.length) firebase.initializeApp(FB_CFG);
+      db = firebase.firestore();
+      db.enablePersistence({ synchronizeTabs: true }).catch(function () {});
+    }
+  } catch (e) { console.warn('Firebase init error:', e); }
+
+  // ── Session — require real Firebase Auth, no guest fallback ─────────────────
+  // Legal chat contains sensitive legal data — guests must not be allowed.
+  var _sess = null;
+  try {
+    if (typeof MRAuth !== 'undefined' && MRAuth.currentUser) _sess = MRAuth.currentUser();
+  } catch (e) { console.warn('MRAuth not available:', e); }
+
+  // Fallback: read from localStorage cache
+  if (!_sess) {
+    try { _sess = JSON.parse(localStorage.getItem('mr_session')); } catch (e) {}
+  }
+
+  // Hard redirect if not authenticated — NO guest session creation
+  if (!_sess || !_sess.uid || _sess.uid.startsWith('guest_')) {
+    window.location.replace('login.html?next=' + encodeURIComponent(window.location.pathname));
+    throw new Error('Unauthenticated — redirecting');
+  }
+
+  // Verify Firebase Auth is still active (async check — catches tampered localStorage)
+  if (typeof firebase !== 'undefined') {
+    firebase.auth().onAuthStateChanged(function(user) {
+      if (!user) {
+        // Firebase says not logged in — clear cache and redirect
+        try { localStorage.removeItem('mr_session'); } catch(e) {}
+        window.location.replace('login.html?next=' + encodeURIComponent(window.location.pathname));
+      } else if (user.uid !== _sess.uid) {
+        // UID mismatch — different user signed in
+        try { localStorage.removeItem('mr_session'); } catch(e) {}
+        window.location.replace('login.html');
+      }
+    });
+  }
+
+  var UID      = _sess.uid;
+  var UNAME    = _sess.name || 'User';
+  var ROOM_ID  = 'room_' + UID;   // always room_<real_firebase_uid>
+  var FREE_MAX = 3;
+
+  // ── State ────────────────────────────────────────────────────────────────────
+  var msgLoaded = false;
+  var userSent  = 0;
+  var unlocked  = false;
+
+  // ── DOM ──────────────────────────────────────────────────────────────────────
+  var chatArea    = document.getElementById('chatArea');
+  var welcome     = document.getElementById('welcomeState');
+  var input       = document.getElementById('msgInput');
+  var sendBtn     = document.getElementById('sendBtn');
+  var charCountEl = document.getElementById('charCount');
+  var noticeBar   = document.getElementById('noticeBar');
+  var paywallBar  = document.getElementById('paywallBar');
+  var counterPill = document.getElementById('counterPill');
+  var counterText = document.getElementById('counterText');
+
+  // ── Online / offline ─────────────────────────────────────────────────────────
+  window.addEventListener('online',  function () { document.getElementById('offlineBanner').classList.remove('show'); });
+  window.addEventListener('offline', function () { document.getElementById('offlineBanner').classList.add('show'); });
+
+  // ── Mobile keyboard: scroll chat to bottom when keyboard opens ───────────────
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', function () {
+      requestAnimationFrame(function () { scrollBottom(false); });
+    });
+  }
+  input.addEventListener('focus', function () { setTimeout(function () { scrollBottom(true); }, 300); });
+
+  // ── Input handler ────────────────────────────────────────────────────────────
+  function onInput() {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 100) + 'px';
+    var len     = input.value.trim().length;
+    var blocked = !unlocked && userSent >= FREE_MAX;
+    sendBtn.disabled = (len === 0 || blocked);
+    charCountEl.textContent = input.value.length > 800 ? (1000 - input.value.length) + '' : '';
+    charCountEl.className   = 'char-count' + (input.value.length > 900 ? ' warn' : '');
+  }
+
+  input.addEventListener('input', onInput);
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!sendBtn.disabled) sendMessage(); }
+  });
+
+  // Mobile: touchend fires before blur so value is intact
+  var _sending = false;
+  function trySend() {
+    if (_sending || sendBtn.disabled) return;
+    _sending = true;
+    setTimeout(function () { _sending = false; }, 500);
+    sendMessage();
+  }
+  sendBtn.addEventListener('touchend', function (e) { e.preventDefault(); trySend(); });
+  sendBtn.addEventListener('click', trySend);
+
+  // ── Hint chips ───────────────────────────────────────────────────────────────
+  window.fillHint = function (el) {
+    input.value = el.textContent.replace(/^\S+\s/, '');
+    onInput();
+    input.focus();
+  };
+
+  // ── Refresh UI state ─────────────────────────────────────────────────────────
+  function refreshUI() {
+    var remaining = FREE_MAX - userSent;
+    if (unlocked) {
+      paywallBar.classList.remove('show');
+      counterPill.style.display = 'none';
+      input.disabled = false;
+      input.placeholder = 'Type your legal question…';
+      sendBtn.disabled = input.value.trim().length === 0;
+      return;
+    }
+    if (userSent >= FREE_MAX) {
+      paywallBar.classList.add('show');
+      noticeBar.style.display = 'none';
+      counterPill.style.display = 'none';
+      input.disabled = true;
+      input.placeholder = 'Pay ₹49 to continue chatting…';
+      sendBtn.disabled = true;
+    } else {
+      paywallBar.classList.remove('show');
+      if (userSent > 0) {
+        counterPill.style.display = 'flex';
+        counterPill.className = 'counter-pill' + (remaining <= 1 ? ' warn' : '');
+        counterText.textContent = userSent + ' / ' + FREE_MAX + ' free — ' + remaining + ' left';
+      } else {
+        counterPill.style.display = 'none';
+      }
+      input.disabled = false;
+      input.placeholder = 'Type your legal question…';
+      sendBtn.disabled = input.value.trim().length === 0;
+    }
+  }
+
+  // ── Send message ─────────────────────────────────────────────────────────────
+  function sendMessage() {
+    var text = input.value.trim();
+    if (!text) return;
+    if (!db) { showToast('Chat unavailable — check internet', 'error'); return; }
+    if (!unlocked && userSent >= FREE_MAX) { showToast('Pay ₹49 to send more messages', 'error'); return; }
+
+    sendBtn.disabled = true;
+    var orig = input.value;
+    input.value = '';
+    input.style.height = 'auto';
+    charCountEl.textContent = '';
+
+    var TS = firebase.firestore.FieldValue.serverTimestamp();
+    db.collection('chats').doc(ROOM_ID).collection('messages').add({
+      text: text, sender: 'user', senderName: UNAME,
+      userId: UID, userEmail: _sess.email,
+      ts: TS, read: false, status: 'sent'
+    }).then(function () {
+      return db.collection('chats').doc(ROOM_ID).set({
+        userId: UID, userName: UNAME, userEmail: _sess.email,
+        lastMessage: text.slice(0, 80),
+        lastTs: firebase.firestore.FieldValue.serverTimestamp(),
+        unreadAdmin: firebase.firestore.FieldValue.increment(1),
+        plan: _sess.plan || 'free',
+        chatUnlocked: unlocked
+      }, { merge: true });
+    }).then(function () {
+      sendBtn.disabled = (input.value.trim().length === 0);
+    }).catch(function (err) {
+      console.warn('Send error:', err);
+      input.value = orig;
+      onInput();
+      showToast('Failed to send. Try again.', 'error');
+    });
+  }
+
+  // ── Load & listen messages ───────────────────────────────────────────────────
+  function loadMessages() {
+    if (!db) return;
+    var ref = db.collection('chats').doc(ROOM_ID)
+      .collection('messages').orderBy('ts', 'asc').limitToLast(200);
+
+    ref.onSnapshot(function (snap) {
+      if (!msgLoaded) {
+        msgLoaded = true;
+        userSent = snap.docs.filter(function (d) { return d.data().sender === 'user'; }).length;
+
+        db.collection('chats').doc(ROOM_ID).get().then(function (roomDoc) {
+          if (roomDoc.exists && roomDoc.data().chatUnlocked) unlocked = true;
+          refreshUI();
+        }).catch(function () { refreshUI(); });
+
+        chatArea.innerHTML = '';
+        if (snap.empty) { chatArea.appendChild(welcome); return; }
+
+        var lastDate = '';
+        snap.docs.forEach(function (doc) {
+          var data = Object.assign({ id: doc.id }, doc.data());
+          var ds = fmtDate(data.ts && data.ts.toDate ? data.ts.toDate() : null);
+          if (ds !== lastDate) { appendDateSep(ds); lastDate = ds; }
+          appendBubble(data, false);
+        });
+        noticeBar.style.display = 'none';
+        scrollBottom(false);
+        markAdminMessagesRead(snap);
+
+      } else {
+        snap.docChanges().forEach(function (ch) {
+          if (ch.type !== 'added') return;
+          var data = Object.assign({ id: ch.doc.id }, ch.doc.data());
+          if (data.sender === 'user') { userSent++; refreshUI(); }
+          var ws = document.getElementById('welcomeState');
+          if (ws) ws.remove();
+          appendBubble(data, true);
+          noticeBar.style.display = 'none';
+          scrollBottom(true);
+          if (data.sender === 'admin') {
+            showToast('⚖️ New reply from legal team', 'success');
+            db.collection('chats').doc(ROOM_ID).update({ unreadUser: 0 }).catch(function () {});
+            db.collection('chats').doc(ROOM_ID).collection('messages')
+              .doc(data.id).update({ read: true }).catch(function () {});
+            showReplyBanner();
+          }
+        });
+      }
+    }, function (err) { console.warn('Snapshot error:', err); });
+  }
+
+  // ── Render helpers ───────────────────────────────────────────────────────────
+  function appendDateSep(label) {
+    var el = document.createElement('div');
+    el.className = 'date-sep';
+    el.textContent = label || 'Today';
+    chatArea.appendChild(el);
+  }
+
+  function appendBubble(data, animate) {
+    var isUser = data.sender === 'user';
+    var row = document.createElement('div');
+    row.className = 'msg-row ' + (isUser ? 'user' : 'admin');
+    row.dataset.id = data.id;
+    var timeStr    = data.ts && data.ts.toDate ? fmtTime(data.ts.toDate()) : 'sending…';
+    var statusIcon = isUser ? (data.read ? '✓✓' : '✓') : '';
+    var statusCls  = data.read ? 'read' : 'sent';
+    var html = '';
+    if (!isUser) html += '<div class="msg-avatar">⚖️</div>';
+    html += '<div class="bubble">' +
+      escHtml(data.text) +
+      '<span class="bubble-time">' + timeStr +
+      (isUser ? '<span class="bubble-status ' + statusCls + '">' + statusIcon + '</span>' : '') +
+      '</span></div>';
+    row.innerHTML = html;
+    if (!animate) row.style.animation = 'none';
+    chatArea.appendChild(row);
+  }
+
+  function scrollBottom(smooth) {
+    setTimeout(function () {
+      chatArea.scrollTo({ top: chatArea.scrollHeight, behavior: smooth ? 'smooth' : 'instant' });
+    }, 60);
+  }
+
+  // ── Paywall ──────────────────────────────────────────────────────────────────
+  // WORKER_URL must match the deployed Cloudflare Worker URL
+  var WORKER_URL = 'https://myright-api.ananthuapi123.workers.dev';
+
+  window.openPaywall = function () {
+    var btn = document.getElementById('paywallBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Preparing payment…';
+
+    // Step 1: create server-side order (amount fixed on server)
+    fetch(WORKER_URL + '/create-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ planId: 'chat_unlock', uid: UID, email: _sess.email })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(orderData) {
+      if (orderData.error) {
+        showToast('Could not start payment: ' + orderData.error, 'error');
+        btn.disabled = false; btn.textContent = '💳 Pay ₹49 & Continue Chat';
+        return;
+      }
+      btn.textContent = '⏳ Opening payment…';
+      var options = {
+        key: orderData.key_id,
+        amount: orderData.amount || 4900,
+        currency: 'INR',
+        order_id: orderData.order_id,
+        name: 'MyRight',
+        description: 'Unlimited Legal Chat — this conversation',
+        image: '../icons/icon-192.png',
+        prefill: { name: UNAME, email: _sess.email },
+        theme: { color: '#d4a847' },
+        handler: function (response) {
+          btn.textContent = '⏳ Verifying payment…';
+          // Step 2: server verifies signature before unlocking
+          fetch(WORKER_URL + '/verify-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              razorpay_order_id:   response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature:  response.razorpay_signature,
+              uid: UID, planId: 'chat_unlock'
+            })
+          })
+          .then(function(r) { return r.json(); })
+          .then(function(result) {
+            if (result.error) {
+              showToast('⚠️ Payment received but verification failed. Contact support. ID: ' + response.razorpay_payment_id, 'error');
+              btn.disabled = false; btn.textContent = '💳 Pay ₹49 & Continue Chat';
+              return;
+            }
+            // Server verified — safe to unlock in Firestore
+            db.collection('chats').doc(ROOM_ID).set({
+              chatUnlocked: true,
+              chatPaymentId: response.razorpay_payment_id,
+              chatPaidAt: firebase.firestore.FieldValue.serverTimestamp(),
+              chatPaidAmount: 49
+            }, { merge: true }).then(function () {
+              return db.collection('users').doc(UID).update({ chatPaid: true }).catch(function(){});
+            }).then(function () {
+              unlocked = true; refreshUI();
+              showToast('✅ Payment verified! Chat unlocked.', 'success');
+            }).catch(function() {
+              showToast('Payment verified! Reload if chat is still locked.', 'error');
+            });
+          })
+          .catch(function() {
+            showToast('⚠️ Verification error. Contact support with ID: ' + response.razorpay_payment_id, 'error');
+            btn.disabled = false; btn.textContent = '💳 Pay ₹49 & Continue Chat';
+          });
+        },
+        modal: {
+          ondismiss: function () {
+            btn.disabled = false;
+            btn.textContent = '💳 Pay ₹49 & Continue Chat';
+          }
+        }
+      };
+      try {
+        var rzp = new Razorpay(options);
+        rzp.on('payment.failed', function () {
+          btn.disabled = false; btn.textContent = '💳 Pay ₹49 & Continue Chat';
+          showToast('Payment failed. Please try again.', 'error');
+        });
+        rzp.open();
+      } catch (e) {
+        btn.disabled = false; btn.textContent = '💳 Pay ₹49 & Continue Chat';
+        showToast('Could not open payment. Check internet.', 'error');
+      }
+    })
+    .catch(function() {
+      btn.disabled = false; btn.textContent = '💳 Pay ₹49 & Continue Chat';
+      showToast('Network error. Check your connection.', 'error');
+    });
+  };
+
+  // ── Reply banner ─────────────────────────────────────────────────────────────
+  function showReplyBanner() {
+    var existing = document.getElementById('replyBanner');
+    if (existing) existing.remove();
+    var banner = document.createElement('div');
+    banner.id = 'replyBanner';
+    banner.style.cssText = 'position:fixed;top:var(--topbar-h);left:0;right:0;z-index:100;' +
+      'background:linear-gradient(135deg,rgba(32,199,126,0.15),rgba(32,199,126,0.08));' +
+      'border-bottom:1px solid rgba(32,199,126,0.3);' +
+      'padding:10px 16px;display:flex;align-items:center;gap:10px;' +
+      'font-size:13px;color:#68d391;animation:slideDown .3s ease;';
+    banner.innerHTML = '<style>@keyframes slideDown{from{transform:translateY(-100%)}to{transform:translateY(0)}}</style>' +
+      '<span style="font-size:18px;">⚖️</span>' +
+      '<span style="flex:1;"><strong>Legal team replied!</strong> Scroll down to see the reply.</span>' +
+      '<button onclick="this.parentElement.remove();scrollBottom(true);" ' +
+      'style="background:rgba(32,199,126,0.2);border:1px solid rgba(32,199,126,0.3);' +
+      'color:#68d391;border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer;font-family:\'Sora\',sans-serif;">View ↓</button>';
+    document.body.insertBefore(banner, document.body.children[1] || null);
+    setTimeout(function () { if (banner.parentElement) banner.remove(); }, 8000);
+  }
+
+  // ── Mark admin messages read ─────────────────────────────────────────────────
+  function markAdminMessagesRead(snap) {
+    var batch = db.batch();
+    var hasUnread = false;
+    snap.docs.forEach(function (doc) {
+      var d = doc.data();
+      if (d.sender === 'admin' && !d.read) {
+        batch.update(doc.ref, { read: true });
+        hasUnread = true;
+      }
+    });
+    if (hasUnread) {
+      batch.commit().catch(function () {});
+      db.collection('chats').doc(ROOM_ID).update({ unreadUser: 0 }).catch(function () {});
+    }
+  }
+
+  // ── Formatters ───────────────────────────────────────────────────────────────
+  function fmtTime(d) {
+    return d ? d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) : '';
+  }
+  function fmtDate(d) {
+    if (!d) return 'Today';
+    var today = new Date();
+    if (d.toDateString() === today.toDateString()) return 'Today';
+    var yest = new Date(today); yest.setDate(today.getDate() - 1);
+    if (d.toDateString() === yest.toDateString()) return 'Yesterday';
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+  function escHtml(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+  }
+  function showToast(msg, type) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (type ? ' ' + type : '');
+    setTimeout(function () { t.className = 'toast'; }, 3200);
+  }
+
+  // ── Kick off ─────────────────────────────────────────────────────────────────
+  if (!db) {
+    noticeBar.innerHTML = '<span>⚠️</span><span>Chat unavailable — check your internet connection</span>';
+    noticeBar.style.borderColor = 'rgba(240,79,79,0.3)';
+    noticeBar.style.color = '#f87171';
+    input.disabled = true;
+    input.placeholder = 'Chat unavailable';
+    sendBtn.disabled = true;
+  } else {
+    loadMessages();
+  }
+
+}()); // end IIFE
+</script>
+</body>
+</html>

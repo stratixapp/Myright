@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>Delete Account — MyRight</title>
+  <link rel="manifest" href="../manifest.json"/>
+  <meta name="theme-color" content="#070c19"/>
+  <link rel="icon" href="../icons/favicon.ico"/>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/main.css"/>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="../js/firebase-auth.js"></script>
+</head>
+<body style="background:#070c19;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;">
+
+<div style="max-width:440px;width:100%;background:#0b1220;border:1.5px solid rgba(255,80,80,0.2);border-radius:20px;padding:32px 28px;">
+  <div style="text-align:center;margin-bottom:24px;">
+    <div style="font-size:40px;margin-bottom:10px;">⚠️</div>
+    <h1 style="font-family:'Outfit',sans-serif;font-size:22px;font-weight:700;color:#f0f4ff;margin:0 0 6px;">Delete My Account</h1>
+    <p style="font-size:13px;color:rgba(255,255,255,0.45);margin:0;">This action is permanent and cannot be undone.</p>
+  </div>
+
+  <!-- What gets deleted -->
+  <div style="background:rgba(255,255,255,0.04);border-radius:12px;padding:16px;margin-bottom:20px;">
+    <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,0.5);margin-bottom:10px;letter-spacing:.5px;">WHAT WILL BE DELETED</div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.7);line-height:1.7;">
+      ✓ Your profile and account<br>
+      ✓ All saved legal documents<br>
+      ✓ Chat history<br>
+      ✓ Usage analytics
+    </div>
+  </div>
+
+  <!-- What is retained -->
+  <div style="background:rgba(255,200,0,0.04);border:1px solid rgba(255,200,0,0.15);border-radius:12px;padding:16px;margin-bottom:24px;">
+    <div style="font-size:12px;font-weight:700;color:rgba(255,200,0,0.7);margin-bottom:8px;letter-spacing:.5px;">RETAINED FOR LEGAL/PAYMENT RECORDS</div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.7;">
+      Payment transaction records are retained for 7 years as required by Indian tax law (GST compliance). These records are not used for marketing and are not accessible to you post-deletion.
+    </div>
+  </div>
+
+  <!-- Re-auth section -->
+  <div id="reAuthSection">
+    <div style="font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:12px;">To confirm, enter your account password:</div>
+    <input id="confirmPw" type="password" placeholder="Your current password"
+      style="width:100%;padding:13px 16px;background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.12);border-radius:12px;color:#f0f4ff;font-size:16px;outline:none;margin-bottom:10px;font-family:inherit;box-sizing:border-box;"/>
+    <div id="deleteError" style="font-size:12px;color:#f04f4f;min-height:18px;margin-bottom:12px;"></div>
+
+    <button id="deleteBtn" onclick="confirmDelete()"
+      style="width:100%;padding:13px;background:linear-gradient(135deg,#c0392b,#962d22);border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;">
+      🗑️ Permanently Delete My Account
+    </button>
+    <button onclick="window.history.back()"
+      style="width:100%;padding:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:rgba(255,255,255,0.7);font-size:14px;cursor:pointer;font-family:inherit;">
+      Cancel — Keep My Account
+    </button>
+  </div>
+
+  <!-- Success -->
+  <div id="deleteSuccess" style="display:none;text-align:center;padding:20px 0;">
+    <div style="font-size:36px;margin-bottom:12px;">✅</div>
+    <div style="font-size:15px;font-weight:600;color:#f0f4ff;margin-bottom:8px;">Account deletion initiated</div>
+    <div style="font-size:13px;color:rgba(255,255,255,0.5);">Your data is being deleted. You will be signed out shortly.</div>
+  </div>
+
+  <!-- Support fallback -->
+  <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.08);text-align:center;">
+    <div style="font-size:12px;color:rgba(255,255,255,0.35);">
+      Having trouble? Email us at
+      <a href="mailto:support@myright.in" style="color:rgba(212,168,71,0.8);">support@myright.in</a>
+      and we will manually complete your deletion within 7 business days.
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  // Require auth
+  const session = MRAuth.currentUser();
+  if (!session) { window.location.replace('login.html'); return; }
+
+  const FB_CONFIG = {
+    apiKey: "AIzaSyAO6trpZKCvCm4xwuuiCMlLVhmJOdZ_Krc",
+    authDomain: "my-right-c8924.firebaseapp.com",
+    projectId: "my-right-c8924",
+    storageBucket: "my-right-c8924.firebasestorage.app",
+    messagingSenderId: "879694032704",
+    appId: "1:879694032704:web:c36729fe7fa249076b94a5"
+  };
+
+  if (!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
+  const auth = firebase.auth();
+  const db   = firebase.firestore();
+
+  async function confirmDelete() {
+    const pw    = document.getElementById('confirmPw').value.trim();
+    const errEl = document.getElementById('deleteError');
+    const btn   = document.getElementById('deleteBtn');
+    errEl.textContent = '';
+
+    if (!pw) { errEl.textContent = '❌ Please enter your password.'; return; }
+
+    btn.textContent = 'Verifying…'; btn.disabled = true;
+
+    const user = auth.currentUser;
+    if (!user) { errEl.textContent = '❌ Session expired. Please log in again.'; btn.disabled = false; btn.textContent = '🗑️ Permanently Delete My Account'; return; }
+
+    try {
+      // Step 1: Re-authenticate before destructive action
+      const cred = firebase.auth.EmailAuthProvider.credential(user.email, pw);
+      await user.reauthenticateWithCredential(cred);
+
+      btn.textContent = 'Deleting data…';
+
+      // Step 2: Delete user's Firestore collections (batch delete)
+      const uid = user.uid;
+      const batch = db.batch();
+
+      // Delete documents
+      const docs = await db.collection('documents').where('userId','==',uid).get();
+      docs.forEach(d => batch.delete(d.ref));
+
+      // Delete analytics
+      batch.delete(db.collection('analytics').doc(uid));
+
+      // Delete user profile
+      batch.delete(db.collection('users').doc(uid));
+
+      // Mark chat room for deletion
+      batch.delete(db.collection('chats').doc('room_' + uid));
+
+      await batch.commit();
+
+      // Log deletion request to support tickets (not adminLogs — user can still write here)
+      await db.collection('supportTickets').add({
+        userId: uid,
+        type: 'account_deletion',
+        status: 'completed',
+        requestedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        note: 'Account and data deleted by user. Payment records retained for compliance.'
+      }).catch(() => {});
+
+      // Step 3: Delete Firebase Auth account
+      await user.delete();
+
+      // Clear local session
+      localStorage.removeItem('mr_session');
+
+      // Show success
+      document.getElementById('reAuthSection').style.display = 'none';
+      document.getElementById('deleteSuccess').style.display = 'block';
+
+      setTimeout(() => { window.location.replace('../index.html'); }, 3000);
+
+    } catch(e) {
+      const msgs = {
+        'auth/wrong-password':    'Incorrect password. Please try again.',
+        'auth/too-many-requests': 'Too many attempts. Please try again later.',
+        'auth/requires-recent-login': 'Please sign out and sign back in before deleting.'
+      };
+      document.getElementById('deleteError').textContent = '❌ ' + (msgs[e.code] || 'Deletion failed: ' + e.message);
+      btn.textContent = '🗑️ Permanently Delete My Account';
+      btn.disabled = false;
+    }
+  }
+
+  window.confirmDelete = confirmDelete;
+})();
+</script>
+<script src="../js/sw-register.js"></script>
+</body>
+</html>

@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <link rel="manifest" href="../manifest.json"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="theme-color" content="#070c19"/>
+  <title>My Documents — MyRight</title>
+  <link rel="apple-touch-icon" href="../icons/icon-192.png"/>
+  <link rel="icon" href="../icons/favicon.ico"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/main.css"/>
+  <style>
+    .vault-empty{text-align:center;padding:60px 20px;color:var(--text3)}
+    .vault-empty .icon{font-size:56px;margin-bottom:16px}
+    .doc-card-row{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:12px;display:flex;align-items:center;gap:16px;transition:border-color .2s}
+    .doc-card-row:hover{border-color:var(--border2)}
+    .doc-icon-big{font-size:32px;flex-shrink:0}
+    .doc-info{flex:1;min-width:0}
+    .doc-name{font-size:15px;font-weight:600;color:var(--text1);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .doc-meta{font-size:12px;color:var(--text3)}
+    .doc-actions{display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap}
+    .btn-sm-pdf{background:rgba(28,185,122,0.1);border:1px solid rgba(28,185,122,0.3);color:#1cb97a;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-family:Outfit,sans-serif;font-weight:600;transition:all .2s}
+    .btn-sm-pdf:hover{background:rgba(28,185,122,0.2)}
+    .btn-sm-del{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:#f87171;padding:7px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-family:Outfit,sans-serif;transition:all .2s}
+    .btn-sm-del:hover{background:rgba(239,68,68,0.15)}
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;}
+    .modal-overlay.show{display:flex!important;}
+    .modal{background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:28px;max-width:700px;width:100%;max-height:80vh;overflow:hidden;display:flex;flex-direction:column}
+    .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+    .modal-title{font-size:17px;font-weight:700}
+    .modal-close{font-size:20px;cursor:pointer;color:var(--text3);padding:4px 8px;border-radius:6px;background:none;border:none;transition:color .2s}
+    .modal-close:hover{color:var(--text1)}
+    .modal-body{overflow-y:auto;flex:1}
+    .modal-body pre{white-space:pre-wrap;font-family:Georgia,serif;font-size:13px;line-height:1.9;color:var(--text2)}
+    .modal-footer{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap}
+    .badge-count{background:var(--gold-dim);border:1px solid rgba(201,151,58,0.2);color:var(--gold);padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+
+<div class="app-topbar">
+  <button class="hamburger-btn" onclick="openSidebar()">☰</button>
+  <a href="../index.html" class="logo" style="gap:8px;">
+    <div class="logo-icon" style="width:30px;height:30px;font-size:15px;">⚖️</div>
+    <span class="logo-text" style="font-size:18px;">MyRight</span>
+  </a>
+  <div style="width:38px;"></div>
+</div>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <a href="../index.html" class="logo"><div class="logo-icon">⚖️</div><span class="logo-text">MyRight</span></a>
+      <span class="sidebar-tagline">Know Your Rights. Own Your Documents.</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a class="sidebar-item" href="dashboard.html"><span class="sidebar-icon">🏠</span> Dashboard</a>
+      <a class="sidebar-item" href="generate.html"><span class="sidebar-icon">✨</span> Generate Document</a>
+      <a class="sidebar-item active" href="vault.html"><span class="sidebar-icon">🗂️</span> My Documents</a>
+      <a class="sidebar-item" href="legal-advisor.html"><span class="sidebar-icon">👨‍⚖️</span> Legal Advisor</a>
+      <a class="sidebar-item" href="risk-analyzer.html"><span class="sidebar-icon">🔍</span> Risk Analyzer</a>
+      <a class="sidebar-item" href="legal-chat.html"><span class="sidebar-icon">💬</span> Legal Support</a>
+      <a class="sidebar-item" href="subscription.html"><span class="sidebar-icon">⭐</span> Subscription</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <a class="sidebar-item" href="profile.html"><span class="sidebar-icon">👤</span> Profile</a>
+      <button class="sidebar-item" onclick="doLogout()"><span class="sidebar-icon">🚪</span> Sign Out</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+      <div>
+        <h1 class="page-title">🗂️ My Documents</h1>
+        <p class="page-sub">All your generated legal documents saved locally</p>
+      </div>
+      <a href="generate.html" class="btn-primary" style="display:inline-flex;">✨ Generate New</a>
+    </div>
+
+    <!-- Storage usage bar -->
+    <div id="storageBar" style="margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:12px;color:var(--text3);display:flex;align-items:center;gap:12px;">
+      <span>💾 Storage:</span>
+      <div style="flex:1;background:var(--bg2);border-radius:4px;height:6px;overflow:hidden;">
+        <div id="storageBarFill" style="height:100%;background:#1cb97a;border-radius:4px;transition:width .4s;"></div>
+      </div>
+      <span id="storageLabel">–</span>
+      <button onclick="dedupeVault()" style="margin-left:8px;background:none;border:1px solid var(--border);color:var(--text3);padding:3px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:Outfit,sans-serif;">Remove Dupes</button>
+    </div>
+
+    <div class="gen-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <h3 style="margin:0;">Your Documents</h3>
+          <span class="badge-count" id="docCount">0 docs</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;gap:8px;min-width:180px;">
+            <span style="color:var(--text3);font-size:13px;">🔍</span>
+            <input type="text" id="vaultSearch" placeholder="Search documents..." oninput="filterVault(this.value)" style="background:none;border:none;outline:none;font-family:Outfit,sans-serif;font-size:16px;color:var(--text1);width:100%;">
+          </div>
+          <select id="vaultSort" onchange="renderVault()" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:16px;color:var(--text2);font-family:Outfit,sans-serif;cursor:pointer;">
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="name">By name A–Z</option>
+          </select>
+        </div>
+      </div>
+      <div id="vaultList"></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal-overlay" id="previewModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Document Preview</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <pre id="modalContent"></pre>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary" style="flex:1;" onclick="printCurrent()">🖨️ Print / Save PDF</button>
+      <button class="btn-ghost" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <a class="bottom-nav-item" href="dashboard.html"><span class="bn-icon">🏠</span>Home</a>
+  <a class="bottom-nav-item" href="generate.html"><span class="bn-icon">✨</span>Generate</a>
+  <a class="bottom-nav-item active" href="vault.html"><span class="bn-icon">🗂️</span>Vault</a>
+  <a class="bottom-nav-item" href="legal-advisor.html"><span class="bn-icon">👨‍⚖️</span>Advisor</a>
+  <a class="bottom-nav-item" href="profile.html"><span class="bn-icon">👤</span>Profile</a>
+</nav>
+
+<a class="fab" href="generate.html" title="Generate Document">✨</a>
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="../js/firebase-auth.js"></script>
+<script>
+  const DOC_ICONS = {
+    rent_agreement:'🏠', nda:'🤝', partnership_deed:'🏢', offer_letter:'💼', employment_letter:'💼',
+    freelance_contract:'🖊️', freelance_agreement:'🖊️', legal_notice:'⚡', affidavit:'📜',
+    poa:'✍️', sale_agreement:'🚗', leave_license:'🏗️', will_deed:'📜', gift_deed:'🎁',
+    divorce_notice:'⚖️', cheque_bounce:'💳', consumer_complaint:'🛒', service_agreement:'🤝'
+  };
+
+  const user = MRAuth.requireAuth();
+  if (!user) throw new Error('redirect');
+
+  let _currentDoc = null;
+
+  let _allVaultDocs = [];
+  let _vaultFilter = '';
+
+  function filterVault(q) {
+    _vaultFilter = (q||'').toLowerCase();
+    renderVault();
+  }
+
+  async function renderVault() {
+    _allVaultDocs = await MRDocs.getAll(user.uid);
+    const sort = document.getElementById('vaultSort')?.value || 'newest';
+    let docs = [..._allVaultDocs];
+    if (_vaultFilter) {
+      docs = docs.filter(d => (d.docName||'').toLowerCase().includes(_vaultFilter)||(d.docType||'').toLowerCase().includes(_vaultFilter));
+    }
+    if (sort === 'oldest') docs = docs.reverse();
+    else if (sort === 'name') docs = docs.sort((a,b)=>(a.docName||'').localeCompare(b.docName||''));
+    document.getElementById('docCount').textContent = `${_allVaultDocs.length} doc${_allVaultDocs.length !== 1 ? 's' : ''}`;
+
+    if (_allVaultDocs.length === 0) {
+      document.getElementById('vaultList').innerHTML = `
+        <div class="vault-empty">
+          <div class="icon">🗂️</div>
+          <p style="font-size:15px;font-weight:600;margin-bottom:8px;color:var(--text2);">No documents yet</p>
+          <p style="font-size:13px;margin-bottom:20px;">Generate your first legal document to see it here.</p>
+          <a href="generate.html" class="btn-primary" style="display:inline-flex;">Generate Document →</a>
+        </div>`;
+      return;
+    }
+    if (docs.length === 0) {
+      document.getElementById('vaultList').innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text3);">No documents match your search.</div>';
+      return;
+    }
+
+    document.getElementById('vaultList').innerHTML = docs.map(d => {
+      const icon = DOC_ICONS[d.docType] || '📄';
+      const date = new Date(d.createdAt).toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'});
+      const time = new Date(d.createdAt).toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit'});
+      const charCount = (d.content||'').length;
+      const sizeLabel = charCount > 2000 ? Math.round(charCount/1000)+'k chars' : charCount+' chars';
+      return `<div class="doc-card-row" id="row-${d.id}">
+        <div class="doc-icon-big">${icon}</div>
+        <div class="doc-info">
+          <div class="doc-name">${d.docName || d.docType}</div>
+          <div class="doc-meta">📅 ${date} at ${time} &nbsp;·&nbsp; 📄 ${sizeLabel}</div>
+        </div>
+        <div class="doc-actions">
+          <button class="btn-sm-pdf" onclick="previewDoc('${d.id}')">👁 View</button>
+          <button class="btn-sm-pdf" onclick="downloadPDF('${d.id}')">⬇ PDF</button>
+          <button class="btn-sm-pdf" style="background:rgba(59,127,255,.08);border-color:rgba(59,127,255,.25);color:#3b7fff;" onclick="downloadDOCX_vault('${d.id}')">⬇ DOCX</button>
+          <button class="btn-sm-del" onclick="deleteDoc('${d.id}')">🗑</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function previewDoc(id) {
+    const d = await MRDocs.get(id);
+    if (!d) return;
+    _currentDoc = d;
+    document.getElementById('modalTitle').textContent = d.docName || d.docType;
+    document.getElementById('modalContent').textContent = d.content;
+    document.getElementById('previewModal').classList.add('show');
+  }
+
+  function closeModal() {
+    document.getElementById('previewModal').classList.remove('show');
+    _currentDoc = null;
+  }
+
+  function printCurrent() {
+    if (!_currentDoc) return;
+    downloadPDFContent(_currentDoc);
+  }
+
+  async function downloadPDF(id) {
+    const d = await MRDocs.get(id);
+    if (d) downloadPDFContent(d);
+  }
+
+  function downloadPDFContent(d) {
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `<div style="font-family:Georgia,serif;padding:50px;max-width:800px;color:#1a1a1a;font-size:13px;line-height:1.9;">
+      <div style="text-align:center;border-bottom:3px double #1a1a1a;padding-bottom:20px;margin-bottom:32px;">
+        <div style="font-size:26px;font-weight:bold;">⚖️ MyRight</div>
+        <div style="font-size:16px;font-weight:700;margin-top:10px;">${d.docName}</div>
+        <div style="font-size:11px;color:#777;margin-top:6px;">Know Your Rights. Own Your Documents. | myright.app</div>
+      </div>
+      <pre style="white-space:pre-wrap;font-family:Georgia,serif;font-size:13px;line-height:1.9;">${d.content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+      <div style="border-top:1px solid #ccc;margin-top:56px;padding-top:14px;font-size:10px;color:#999;text-align:center;">
+        Generated by MyRight — AI-generated template. Consult a lawyer for complex legal matters. | myright.app
+      </div></div>`;
+    document.body.appendChild(wrap);
+    if (typeof html2pdf === 'undefined') {
+      // Fallback: print dialog
+      document.body.removeChild(wrap);
+      const win = window.open('', '_blank');
+      win.document.write('<html><head><title>' + d.docName + '</title></head><body>' + wrap.innerHTML + '</body></html>');
+      win.document.close(); win.focus(); setTimeout(() => win.print(), 400);
+      return;
+    }
+    html2pdf().set({
+      margin:[15,15,15,15], filename:'myright-' + (d.docType||'doc') + '.pdf',
+      image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2,useCORS:true},
+      jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+    }).from(wrap).save().then(() => {
+      document.body.removeChild(wrap);
+      toast('✅ PDF downloaded!');
+    });
+  }
+
+  async function deleteDoc(id) {
+    if (!confirm('Delete this document? This cannot be undone.')) return;
+    await MRDocs.delete(id);
+    toast('🗑 Document deleted');
+    renderVault();
+  }
+
+  async function downloadDOCX_vault(id) {
+    const d = await MRDocs.get(id);
+    if (!d) return;
+    buildAndDownloadDOCX(d.docType||'doc', d.docName||'Document', d.content||'');
+  }
+
+  function buildAndDownloadDOCX(docId, name, content) {
+    function crc32(buf){if(!crc32._t){crc32._t=[];for(let i=0;i<256;i++){let c=i;for(let j=0;j<8;j++)c=(c&1)?0xEDB88320^(c>>>1):c>>>1;crc32._t[i]=c;}}let crc=0xFFFFFFFF;for(let i=0;i<buf.length;i++)crc=crc32._t[(crc^buf[i])&0xFF]^(crc>>>8);return(crc^0xFFFFFFFF)>>>0;}
+    function s2b(s){const b=new Uint8Array(s.length);for(let i=0;i<s.length;i++)b[i]=s.charCodeAt(i)&0xFF;return b;}
+    function u32(n){return[n&0xFF,(n>>8)&0xFF,(n>>16)&0xFF,(n>>24)&0xFF];}
+    function u16(n){return[n&0xFF,(n>>8)&0xFF];}
+    function buildZip(files){const locs=[],ctrs=[];let off=0;for(const{fname,data}of files){const nb=s2b(fname),crc=crc32(data),sz=data.length;const lh=new Uint8Array([0x50,0x4B,0x03,0x04,...u16(20),...u16(0),...u16(0),...u16(0),...u16(0),...u32(crc),...u32(sz),...u32(sz),...u16(nb.length),...u16(0),...nb,...data]);locs.push(lh);ctrs.push(new Uint8Array([0x50,0x4B,0x01,0x02,...u16(20),...u16(20),...u16(0),...u16(0),...u16(0),...u16(0),...u32(crc),...u32(sz),...u32(sz),...u16(nb.length),...u16(0),...u16(0),...u16(0),...u16(0),...u32(0),...u32(off),...nb]));off+=lh.length;}const csz=ctrs.reduce((s,c)=>s+c.length,0);const eocd=new Uint8Array([0x50,0x4B,0x05,0x06,...u16(0),...u16(0),...u16(files.length),...u16(files.length),...u32(csz),...u32(off),...u16(0)]);const all=[...locs,...ctrs,eocd];const tot=all.reduce((s,a)=>s+a.length,0);const out=new Uint8Array(tot);let pos=0;for(const a of all){out.set(a,pos);pos+=a.length;}return out;}
+    function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+    const lines=content.split('\n');
+    const paras=lines.map(l=>{const txt=esc(l);const isH=l.length>0&&l===l.toUpperCase()&&l.trim().length>3&&/[A-Z]/.test(l);if(!l.trim())return'<w:p><w:pPr><w:spacing w:after="120"/></w:pPr></w:p>';if(isH)return'<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="240" w:after="120"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="24"/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/></w:rPr><w:t xml:space="preserve">'+txt+'</w:t></w:r></w:p>';return'<w:p><w:pPr><w:spacing w:after="80"/><w:jc w:val="both"/></w:pPr><w:r><w:rPr><w:sz w:val="24"/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/></w:rPr><w:t xml:space="preserve">'+txt+'</w:t></w:r></w:p>';}).join('');
+    const docXml='<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="32"/><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/></w:rPr><w:t>'+esc('MyRight — '+name)+'</w:t></w:r></w:p>'+paras+'<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1260" w:bottom="1440" w:left="1260"/></w:sectPr></w:body></w:document>';
+    const ctypes='<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>';
+    const rels='<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>';
+    const files=[{fname:'[Content_Types].xml',data:s2b(ctypes)},{fname:'_rels/.rels',data:s2b(rels)},{fname:'word/document.xml',data:s2b(docXml)}];
+    const blob=new Blob([buildZip(files)],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+    const url=URL.createObjectURL(blob);
+    const a=Object.assign(document.createElement('a'),{href:url,download:'myright-'+docId+'.docx'});
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    toast('✅ DOCX downloaded!');
+  }
+
+  function toast(msg, type = '') {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.className = 'toast show' + (type ? ' ' + type : '');
+    setTimeout(() => t.className = 'toast', 3000);
+  }
+
+  function doLogout() { MRAuth.signOut(); window.location.href = '../index.html'; }
+  function openSidebar() { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebarOverlay').classList.add('show'); }
+  function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('show'); }
+
+  document.getElementById('previewModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  window.previewDoc = previewDoc;
+  window.downloadPDF = downloadPDF;
+  window.downloadDOCX_vault = downloadDOCX_vault;
+  window.deleteDoc = deleteDoc;
+  window.closeModal = closeModal;
+  window.printCurrent = printCurrent;
+  window.doLogout = doLogout;
+  window.openSidebar = openSidebar;
+  window.closeSidebar = closeSidebar;
+  window.handleLogout = doLogout;
+  window.filterVault = filterVault;
+
+  function updateStorageBar() {
+    // Firebase cloud storage — no local limit
+    document.getElementById('storageBarFill').style.width = '8%';
+    document.getElementById('storageBarFill').style.background = '#1cb97a';
+    document.getElementById('storageLabel').textContent = '☁️ Cloud storage — unlimited';
+  }
+
+  async function dedupeVault() {
+    // With Firebase, each doc has a unique ID — no deduplication needed
+    toast('✅ All documents are unique in the cloud vault!');
+  }
+  window.dedupeVault = dedupeVault;
+
+  updateStorageBar();
+  renderVault();
+
+  // Auto-open preview if redirected from dashboard "PDF" button
+  const _previewId = sessionStorage.getItem('previewDocId');
+  if (_previewId) {
+    sessionStorage.removeItem('previewDocId');
+    setTimeout(() => previewDoc(_previewId), 300);
+  }
+</script>
+<script src="../js/sw-register.js"></script>
+</body>
+</html>

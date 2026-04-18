@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>Reset Password — MyRight</title>
+  <link rel="manifest" href="../manifest.json"/>
+  <meta name="theme-color" content="#070c19"/>
+  <link rel="apple-touch-icon" href="../icons/icon-192.png"/>
+  <link rel="icon" href="../icons/favicon.ico"/>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root{
+      --bg:#04080f;--surface:#0b1220;--surface2:#0f1829;
+      --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.1);
+      --text1:#f0f4ff;--text2:#7e92b4;--text3:#3d5070;
+      --gold:#d4a847;--blue:#4475ff;--green:#20c77e;--red:#f04f4f;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{height:100%}
+    body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text1);min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px 20px;position:relative;overflow-x:hidden}
+    a{color:inherit;text-decoration:none}
+    button{font-family:inherit;cursor:pointer;border:none;outline:none;background:none}
+
+    .bg-orb{position:fixed;border-radius:50%;filter:blur(100px);pointer-events:none;z-index:0}
+    .bg-orb-1{width:600px;height:600px;top:-200px;left:-200px;background:radial-gradient(circle,rgba(15,35,90,0.5) 0%,transparent 65%);animation:orb 16s ease-in-out infinite}
+    .bg-orb-2{width:500px;height:500px;bottom:-150px;right:-150px;background:radial-gradient(circle,rgba(68,117,255,0.06) 0%,transparent 65%);animation:orb 20s ease-in-out infinite reverse}
+    @keyframes orb{0%,100%{transform:scale(1)}50%{transform:scale(1.06) translateY(-20px)}}
+
+    .wrap{position:relative;z-index:1;width:100%;max-width:420px;animation:fadeUp .5s ease both}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+    .back-link{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--text3);margin-bottom:20px;transition:color .2s}
+    .back-link:hover{color:var(--text2)}
+
+    .card{background:var(--surface);border:1px solid var(--border2);border-radius:22px;padding:36px 32px 30px;box-shadow:0 30px 80px rgba(0,0,0,0.6),0 0 0 1px rgba(255,255,255,0.025) inset;position:relative;overflow:hidden}
+    .card::before{content:'';position:absolute;top:0;left:15%;right:15%;height:1px;background:linear-gradient(90deg,transparent,rgba(212,168,71,0.4),transparent)}
+
+    .brand{display:flex;flex-direction:column;align-items:center;margin-bottom:28px}
+    .brand-seal{width:52px;height:52px;background:linear-gradient(145deg,#1a2e50,#0a1a35);border:1.5px solid rgba(212,168,71,0.35);border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:12px;box-shadow:0 4px 20px rgba(0,0,0,0.4)}
+    .brand-name{font-family:'Libre Baskerville',serif;font-size:24px;font-weight:700;margin-bottom:4px}
+    .brand-name span{color:var(--gold)}
+    .brand-tag{font-size:11.5px;color:var(--text3)}
+
+    .card-heading{font-family:'Libre Baskerville',serif;font-size:22px;font-weight:700;text-align:center;margin-bottom:6px}
+    .card-sub{font-size:13px;color:var(--text2);text-align:center;margin-bottom:26px;line-height:1.6}
+
+    .alert{display:none;border-radius:11px;padding:11px 14px;font-size:13px;margin-bottom:16px}
+    .alert.show{display:flex;align-items:flex-start;gap:9px;animation:alertIn .2s ease}
+    .alert-err{background:rgba(240,79,79,0.08);border:1px solid rgba(240,79,79,0.22);color:#fc8181}
+    .alert-ok{background:rgba(32,199,126,0.08);border:1px solid rgba(32,199,126,0.22);color:#68d391}
+    @keyframes alertIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+
+    .fg{margin-bottom:16px}
+    .fg label{display:block;font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--text2);margin-bottom:7px}
+    input[type=email],input[type=password]{width:100%;background:var(--surface2);border:1.5px solid var(--border2);border-radius:12px;padding:13px 16px;font-size:16px;color:var(--text1);font-family:'Sora',sans-serif;outline:none;transition:border-color .2s,box-shadow .2s}
+    input:focus{border-color:rgba(68,117,255,0.5);box-shadow:0 0 0 3px rgba(68,117,255,0.1)}
+    input::placeholder{color:var(--text3)}
+
+    .btn-primary{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px;background:linear-gradient(135deg,#3060e0,#2248c0);border:1px solid rgba(68,117,255,0.3);border-radius:12px;color:#fff;font-size:14.5px;font-weight:600;font-family:'Sora',sans-serif;cursor:pointer;transition:all .2s}
+    .btn-primary:hover:not(:disabled){background:linear-gradient(135deg,#4475ff,#3060e0);box-shadow:0 6px 24px rgba(68,117,255,0.35);transform:translateY(-1px)}
+    .btn-primary:disabled{opacity:.55;cursor:not-allowed;transform:none}
+    .btn-ghost{display:flex;align-items:center;justify-content:center;width:100%;padding:13px;background:transparent;border:1.5px solid var(--border2);border-radius:12px;color:var(--text2);font-size:14px;font-weight:500;font-family:'Sora',sans-serif;cursor:pointer;transition:all .2s;margin-top:10px}
+    .btn-ghost:hover{border-color:rgba(255,255,255,0.2);color:var(--text1)}
+
+    /* Step 2 success state */
+    .success-icon{font-size:56px;text-align:center;margin-bottom:18px}
+    .new-pass-box{background:var(--surface2);border:1px solid var(--border2);border-radius:12px;padding:15px 18px;font-family:monospace;font-size:18px;font-weight:700;color:var(--gold);text-align:center;letter-spacing:3px;margin:16px 0;user-select:all;cursor:text;word-break:break-all}
+    .copy-hint{font-size:11.5px;color:var(--text3);text-align:center;margin-bottom:22px}
+    .copy-hint span{color:var(--gold);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+
+    .form-footer{text-align:center;font-size:13px;color:var(--text2);margin-top:20px}
+    .form-footer a{color:var(--blue);font-weight:600}
+    .spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,0.25);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--surface);border:1px solid var(--border2);border-radius:100px;padding:11px 24px;font-size:13px;font-weight:500;box-shadow:0 8px 32px rgba(0,0,0,0.45);z-index:9999;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    .toast.success{border-color:rgba(32,199,126,0.35);color:#68d391}
+    @media(max-width:480px){.card{padding:28px 20px 24px}}
+  </style>
+</head>
+<body>
+<div class="bg-orb bg-orb-1"></div>
+<div class="bg-orb bg-orb-2"></div>
+
+<div class="wrap">
+  <a href="login.html" class="back-link">← Back to sign in</a>
+
+  <div class="card">
+    <div class="brand">
+      <div class="brand-seal">⚖️</div>
+      <div class="brand-name">My<span>Right</span></div>
+      <div class="brand-tag">Know Your Rights. Own Your Documents.</div>
+    </div>
+
+    <!-- Step 1: Enter email -->
+    <div id="step1">
+      <h2 class="card-heading">Reset Password</h2>
+      <p class="card-sub">Enter your account email and we'll generate a new temporary password you can change later.</p>
+
+      <div class="alert alert-err" id="errBox"><span>⚠️</span><span id="errMsg"></span></div>
+
+      <div class="fg">
+        <label for="emailI">Email Address</label>
+        <input type="email" id="emailI" placeholder="you@example.com" autocomplete="email"/>
+      </div>
+
+      <button class="btn-primary" id="resetBtn" onclick="doReset()">
+        Send Reset Link
+      </button>
+
+      <div class="form-footer">Remember your password? <a href="login.html">Sign in</a></div>
+    </div>
+
+    <!-- Step 2: New password revealed -->
+    <div id="step2" style="display:none">
+      <div class="success-icon">🔑</div>
+      <h2 class="card-heading">Password Reset</h2>
+      <p class="card-sub">Your temporary password has been generated. Copy it and sign in, then change it from your Profile.</p>
+
+      <div class="new-pass-box" id="newPassDisplay"></div>
+      <div class="copy-hint">Tap to select &nbsp;·&nbsp; <span onclick="copyPass()">Copy to clipboard</span></div>
+
+      <a href="login.html">
+        <button class="btn-primary">Sign In Now</button>
+      </a>
+      <button class="btn-ghost" onclick="goStep1()">Try another email</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="../js/firebase-auth.js"></script>
+<script>
+  let _generatedPass = '';
+
+  function showErr(msg){const b=document.getElementById('errBox');document.getElementById('errMsg').textContent=msg;b.classList.add('show');setTimeout(()=>b.classList.remove('show'),5000)}
+
+  function genTempPass(){
+    const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#';
+    let p='';for(let i=0;i<10;i++)p+=chars[Math.floor(Math.random()*chars.length)];
+    return p;
+  }
+
+  function doReset(){
+    const email=document.getElementById('emailI').value.trim();
+    if(!email){showErr('Please enter your email address.');return}
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){showErr('Please enter a valid email address.');return}
+    const btn=document.getElementById('resetBtn');
+    btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Sending…';
+    MRAuth.resetPassword(email).then(r=>{
+      btn.disabled=false;btn.innerHTML='Send Reset Link';
+      if(r.error){showErr(r.error);return}
+      document.getElementById('newPassDisplay').textContent='Check your email for the reset link from Firebase.';
+      document.getElementById('step1').style.display='none';
+      document.getElementById('step2').style.display='block';
+    });
+  }
+
+  function copyPass(){
+    if(navigator.clipboard){
+      navigator.clipboard.writeText(_generatedPass).then(()=>{
+        const t=document.getElementById('toast');t.textContent='✅ Password copied!';t.className='toast show success';
+        setTimeout(()=>t.className='toast',3000);
+      });
+    }
+  }
+
+  function goStep1(){
+    document.getElementById('step1').style.display='block';
+    document.getElementById('step2').style.display='none';
+    document.getElementById('emailI').value='';
+    _generatedPass='';
+  }
+
+  document.addEventListener('keydown',e=>{if(e.key==='Enter')doReset()});
+</script>
+<script src="../js/sw-register.js"></script>
+</body>
+</html>
