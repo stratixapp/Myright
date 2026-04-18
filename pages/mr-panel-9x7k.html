@@ -522,11 +522,18 @@ async function adminDoSignIn() {
   }
 }
 
-function _openPanel() {
+async function _openPanel() {
   document.getElementById('adminLockScreen').style.display = 'none';
   document.getElementById('adminMainContent').style.display = 'block';
 
   initDB();
+
+  // Force-refresh the ID token so custom claims (admin:true) are definitely active
+  // This is critical — without this, Firestore rules reject reads immediately after login
+  try {
+    const user = firebase.auth().currentUser;
+    if (user) await user.getIdToken(true);
+  } catch(e) { console.warn('Token refresh failed:', e); }
 
   setTimeout(() => {
     if (db) {
@@ -541,7 +548,7 @@ function _openPanel() {
       }, () => {});
     }
     loadAdminData();
-  }, 50);
+  }, 800); // give token refresh time to propagate
 }
 
 function _showLock() {
