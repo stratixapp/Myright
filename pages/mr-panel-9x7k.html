@@ -205,7 +205,7 @@
 <!-- ══════════════════════════════════════════════════════
      LOCK SCREEN — FIREBASE AUTH (no hardcoded password)
 ═══════════════════════════════════════════════════════ -->
-<div id="adminLockScreen" style="display:flex;position:fixed;inset:0;z-index:9999;background:#070c19;align-items:center;justify-content:center;">
+<div id="adminLockScreen" style="display:flex;position:fixed;inset:0;z-index:9999;background:#070c19;align-items:center;justify-content:center;pointer-events:auto;">
   <div style="background:#0b1220;border:1px solid rgba(212,168,71,0.3);border-radius:20px;padding:40px 32px;width:90%;max-width:360px;text-align:center;">
     <div style="font-size:48px;margin-bottom:12px;">⚖️</div>
     <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:#f0f4ff;margin-bottom:4px;">MyRight Admin</div>
@@ -494,11 +494,16 @@ async function adminDoSignIn() {
 
   try {
     initDB();
+    if (!firebase.apps.length) {
+      errEl.textContent = '❌ Firebase not loaded. Check your internet and reload the page.';
+      btn.textContent = 'Sign In to Admin Panel'; btn.disabled = false;
+      return;
+    }
     const cred  = await firebase.auth().signInWithEmailAndPassword(email, pw);
     const token = await cred.user.getIdTokenResult(true); // force-refresh
     if (!token.claims.admin) {
       await firebase.auth().signOut();
-      errEl.textContent = '❌ This account does not have admin access.';
+      errEl.textContent = '❌ This account does not have admin access. Make sure you ran the admin claim setup in Cloud Shell.';
       btn.textContent = 'Sign In to Admin Panel'; btn.disabled = false;
       return;
     }
@@ -509,9 +514,10 @@ async function adminDoSignIn() {
       'auth/user-not-found':    'No account found with this email.',
       'auth/invalid-credential':'Incorrect email or password.',
       'auth/too-many-requests': 'Too many attempts. Try again later.',
-      'auth/invalid-email':     'Invalid email address.'
+      'auth/invalid-email':     'Invalid email address.',
+      'auth/network-request-failed': 'Network error. Check your internet connection.'
     };
-    errEl.textContent = '❌ ' + (map[e.code] || 'Sign in failed. Try again.');
+    errEl.textContent = '❌ ' + (map[e.code] || ('Sign in failed: ' + e.message));
     btn.textContent = 'Sign In to Admin Panel'; btn.disabled = false;
   }
 }
@@ -554,7 +560,16 @@ function handleLogout() {
   window.location.reload();
 }
 
-// ── Boot — listen to Firebase Auth state, verify admin claim ──────────────────
+// ── Boot — initialize Firebase FIRST, then listen to auth state ──────────────
+// initDB() must run before firebase.auth() is called — otherwise auth crashes silently
+try {
+  initDB();
+} catch(e) {
+  console.error('Firebase init failed at boot:', e);
+  const errEl = document.getElementById('adminAuthError');
+  if (errEl) errEl.textContent = '❌ Firebase failed to load. Check your internet connection.';
+}
+
 firebase.auth().onAuthStateChanged(async (user) => {
   if (!user) { _showLock(); return; }
   try {
@@ -564,9 +579,13 @@ firebase.auth().onAuthStateChanged(async (user) => {
     } else {
       await firebase.auth().signOut();
       _showLock();
-      document.getElementById('adminAuthError').textContent = '❌ This account does not have admin access.';
+      const errEl = document.getElementById('adminAuthError');
+      if (errEl) errEl.textContent = '❌ This account does not have admin access.';
     }
-  } catch(e) { _showLock(); }
+  } catch(e) {
+    console.error('Auth state error:', e);
+    _showLock();
+  }
 });
 
 // ── Doc prices ────────────────────────────────────────────────
@@ -994,13 +1013,8 @@ async function cvSend(){
   // ── Confirmation before sending to real user ────────────────────────────
   const preview = text.length > 120 ? text.slice(0,120)+'…' : text;
   const confirmed = window.confirm(
-    '📤 Send this reply to the user?
-
-"' + preview + '"
-
-' +
-    'This will appear immediately in the user's chat.
-' +
+    '📤 Send this reply to the user?\n\n"' + preview + '"\n\n' +
+    'This will appear immediately in the user\'s chat.\n' +
     'Make sure your answer is legally accurate.'
   );
   if(!confirmed) return;
