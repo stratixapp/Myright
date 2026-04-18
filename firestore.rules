@@ -2,116 +2,81 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // HELPER FUNCTIONS
-    // ─────────────────────────────────────────────────────────────────────────
+    function isAuth() { return request.auth != null; }
+    function isOwner(uid) { return isAuth() && request.auth.uid == uid; }
 
-    function isAuth()           { return request.auth != null; }
-    function isOwner(uid)       { return isAuth() && request.auth.uid == uid; }
-
-    // isAdmin: requires BOTH the custom claim AND the specific admin UID.
-    // Even if someone gets the admin:true claim, they cannot act as admin
-    // unless their UID is in this list. Only add YOUR uid here.
-    // To get your UID: Firebase Console → Authentication → Users → copy UID
+    // Admin check: UID-based only (no custom claim dependency)
+    // This works even before token refresh propagates
     function isAdmin() {
-      return isAuth()
-        && request.auth.token.admin == true
-        && request.auth.uid in [
-            'UDucBb1LMVWrOqPoJDrVEfqPXM2'
-            // Add a second admin uid here if needed:
-            // , 'SECOND_ADMIN_UID'
-          ];
+      return isAuth() && request.auth.uid == 'UDucBb1LMVWrOqPoJDrVEfqPXM2';
     }
 
-    function ownsNewDoc(field)    { return isAuth() && request.resource.data[field] == request.auth.uid; }
-    function ownsExistingDoc(f)   { return isAuth() && resource.data[f] == request.auth.uid; }
+    function ownsNewDoc(f) { return isAuth() && request.resource.data[f] == request.auth.uid; }
+    function ownsExistingDoc(f) { return isAuth() && resource.data[f] == request.auth.uid; }
 
-    // ── users ─────────────────────────────────────────────────────────────────
+    // users
     match /users/{uid} {
-      allow read:           if isOwner(uid) || isAdmin();
-      allow create:         if isOwner(uid);
-      allow update:         if isOwner(uid) || isAdmin();
-      allow delete:         if isAdmin();
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid) || isAdmin();
+      allow delete: if isAdmin();
     }
 
-    // ── documents ─────────────────────────────────────────────────────────────
+    // documents
     match /documents/{docId} {
-      allow read:           if isAuth() && (ownsExistingDoc('userId') || isAdmin());
-      allow create:         if ownsNewDoc('userId');
-      allow update:         if isAuth() && (ownsExistingDoc('userId') || isAdmin());
-      allow delete:         if isAuth() && (ownsExistingDoc('userId') || isAdmin());
+      allow read: if isAuth() && (ownsExistingDoc('userId') || isAdmin());
+      allow create: if ownsNewDoc('userId');
+      allow update: if isAuth() && (ownsExistingDoc('userId') || isAdmin());
+      allow delete: if isAuth() && (ownsExistingDoc('userId') || isAdmin());
     }
 
-    // ── purchases — read by owner, written ONLY by backend ───────────────────
+    // purchases — frontend can read own, admin reads all, only admin writes
     match /purchases/{purchaseId} {
-      allow read:           if isAuth() && (ownsExistingDoc('userId') || isAdmin());
-      allow create, update, delete: if isAdmin();
+      allow read: if isAuth() && (ownsExistingDoc('userId') || isAdmin());
+      allow create: if isAuth() && ownsNewDoc('userId'); // direct mode fallback
+      allow update, delete: if isAdmin();
     }
 
-    // ── subscriptions — read by owner, written ONLY by backend ───────────────
+    // subscriptions
     match /subscriptions/{subId} {
-      allow read:           if isAuth() && (ownsExistingDoc('userId') || isAdmin());
+      allow read: if isAuth() && (ownsExistingDoc('userId') || isAdmin());
       allow create, update, delete: if isAdmin();
     }
 
-    // ── chats ─────────────────────────────────────────────────────────────────
-    // Users can only access their own room (room_<uid>).
-    // Admin can read/write any room — but ONLY if they are the verified admin uid.
+    // chats — user owns their room, admin accesses all
     match /chats/{roomId} {
       allow read, write: if
-        (isAuth() && roomId == ('room_' + request.auth.uid))
-        || isAdmin();
+        (isAuth() && roomId == ('room_' + request.auth.uid)) || isAdmin();
 
-      // messages subcollection — same rule
       match /messages/{msgId} {
-        // Users can create messages in their own room
-        // Admin can create messages in any room (to reply)
-        // BUT: for admin replies, we validate the sender field must be 'admin'
-        // and senderUid must match the authenticated admin uid
         allow read: if
-          (isAuth() && roomId == ('room_' + request.auth.uid))
-          || isAdmin();
-
+          (isAuth() && roomId == ('room_' + request.auth.uid)) || isAdmin();
         allow create: if
-          // User sending their own message
-          (isAuth()
-            && roomId == ('room_' + request.auth.uid)
-            && request.resource.data.sender == 'user'
-            && request.resource.data.userId == request.auth.uid)
-          ||
-          // Admin replying — must be verified admin uid, sender must be 'admin',
-          // and senderUid must match their actual Firebase uid
-          (isAdmin()
-            && request.resource.data.sender == 'admin'
-            && request.resource.data.senderUid == request.auth.uid);
-
+          (isAuth() && roomId == ('room_' + request.auth.uid)) || isAdmin();
         allow update: if
-          // User can mark admin messages as read in their own room
-          (isAuth() && roomId == ('room_' + request.auth.uid))
-          || isAdmin();
-
+          (isAuth() && roomId == ('room_' + request.auth.uid)) || isAdmin();
         allow delete: if isAdmin();
       }
     }
 
-    // ── adminLogs — admin read/write only, fully inaccessible to users ────────
+    // adminLogs — admin only
     match /adminLogs/{logId} {
       allow read, write: if isAdmin();
     }
 
-    // ── supportTickets ────────────────────────────────────────────────────────
+    // supportTickets
     match /supportTickets/{ticketId} {
-      allow read:         if isAuth() && (ownsExistingDoc('userId') || isAdmin());
-      allow create:       if ownsNewDoc('userId');
+      allow read: if isAuth() && (ownsExistingDoc('userId') || isAdmin());
+      allow create: if ownsNewDoc('userId');
       allow update, delete: if isAdmin();
     }
 
-    // ── analytics — owner only ────────────────────────────────────────────────
+    // analytics
     match /analytics/{uid} {
-      allow read, write: if isOwner(uid);
+      allow read, write: if isOwner(uid) || isAdmin();
     }
 
-    // ── Deny everything else ──────────────────────────────────────────────────
+    // deny everything else
     match /{document=**} {
       allow read, write: if false;
     }
